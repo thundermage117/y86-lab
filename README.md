@@ -14,7 +14,7 @@ An interactive web-based visualizer for a 5-stage pipelined Y86-64 CPU implement
 ## Tech Stack
 * **Hardware:** Verilog (simulated via Icarus Verilog), waveform parsing via Node.js
 * **Backend:** Node.js, Express (parses VCD traces & serves simulation API)
-* **Frontend:** React, Vite, plain CSS (no heavy UI libraries for max performance)
+* **Frontend:** React, Vite, CSS
 
 ## Project Structure
 
