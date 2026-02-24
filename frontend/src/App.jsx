@@ -13,6 +13,61 @@ function formatPercent(value) {
   return `${Math.round(value)}%`;
 }
 
+function formatPercentPrecise(value) {
+  if (!Number.isFinite(value)) return '--';
+  return `${value.toFixed(1)}%`;
+}
+
+function formatCpi(totalCycles, retiredInstructions) {
+  if (!retiredInstructions) return '--';
+  return (totalCycles / retiredInstructions).toFixed(2);
+}
+
+function computePerformanceMetrics(cycles) {
+  if (!Array.isArray(cycles) || cycles.length === 0) {
+    return {
+      retiredInstructions: 0,
+      mispredictions: 0,
+      dataHazardStallCycles: 0,
+      branchPenaltyCycles: 0,
+      branchPenaltyPercent: 0,
+    };
+  }
+
+  let retiredInstructions = 0;
+  let mispredictions = 0;
+  let dataHazardStallCycles = 0;
+
+  for (const cycle of cycles) {
+    const writebackIcode = cycle?.writeback?.icode_name;
+    if (writebackIcode && writebackIcode !== 'x' && writebackIcode !== 'NOP') {
+      retiredInstructions += 1;
+    }
+
+    const isBranchMispredict = cycle?.execute?.icode_name === 'JXX' && cycle?.flags?.e_Cnd === false;
+    if (isBranchMispredict) {
+      mispredictions += 1;
+    }
+
+    const control = cycle?.control;
+    const isDataHazardStall = Boolean(control?.F_stall && control?.D_stall && control?.E_bubble) && !isBranchMispredict;
+    if (isDataHazardStall) {
+      dataHazardStallCycles += 1;
+    }
+  }
+
+  const branchPenaltyCycles = mispredictions * 2;
+  const branchPenaltyPercent = (branchPenaltyCycles / cycles.length) * 100;
+
+  return {
+    retiredInstructions,
+    mispredictions,
+    dataHazardStallCycles,
+    branchPenaltyCycles,
+    branchPenaltyPercent,
+  };
+}
+
 function formatBool(value) {
   if (value === null || value === undefined) return 'x';
   return value ? '1' : '0';
@@ -21,6 +76,26 @@ function formatBool(value) {
 function flagStateLabel(value) {
   if (value === null || value === undefined) return 'x';
   return value ? 'set' : 'clear';
+}
+
+function MetricTooltip({ label, description }) {
+  return (
+    <span className="metric-label">
+      <span>{label}</span>
+      <span className="metric-help">
+        <button
+          type="button"
+          className="metric-help-trigger"
+          aria-label={`${label}: measurement details`}
+        >
+          ?
+        </button>
+        <span role="tooltip" className="metric-tooltip">
+          {description}
+        </span>
+      </span>
+    </span>
+  );
 }
 
 export default function App() {
@@ -39,6 +114,7 @@ export default function App() {
   const control = currentCycle?.control ?? null;
   const flags = currentCycle?.flags ?? null;
   const meta = currentCycle?.meta ?? null;
+  const performanceMetrics = computePerformanceMetrics(cycles);
 
   const activeStages = currentCycle
     ? STAGE_KEYS.filter((key) => currentCycle[key]?.icode_name && currentCycle[key].icode_name !== 'x').length
@@ -307,29 +383,19 @@ export default function App() {
               </div>
             </section>
 
-            <section className="section sidebar-panel">
-              <h2 className="section-title">How To Read This</h2>
-              <div className="sidebar-copy">
+            <details className="section sidebar-panel">
+              <summary className="section-title sidebar-summary">How To Read This</summary>
+              <div className="sidebar-copy sidebar-collapsible-body">
                 <p><strong>1.</strong> Start with <em>Pipeline Stages</em> to see which instruction sits in each stage.</p>
-                <p><strong>2.</strong> Use <em>Cycle Insights</em> for hazards, condition codes, and detailed stage fields.</p>
+                <p><strong>2.</strong> Use <em>Cycle Insights</em> for the main hazard signals, flags, and register changes.</p>
                 <p><strong>3.</strong> Check <em>Register Activity</em> and <em>Register File</em> to see what changed.</p>
                 <p className="sidebar-note">Decimal is the default format for readability. Switch to hex when comparing with hardware traces.</p>
               </div>
-            </section>
+            </details>
 
-            <section className="section sidebar-panel">
-              <h2 className="section-title">Quick Jump</h2>
-              <nav className="sidebar-nav" aria-label="Jump to page sections">
-                <a href="#cycle-summary">Cycle Summary</a>
-                <a href="#pipeline-stages">Pipeline Stages</a>
-                <a href="#cycle-insights">Cycle Insights</a>
-                <a href="#register-file">Register File</a>
-              </nav>
-            </section>
-
-            <section className="section sidebar-panel">
-              <h2 className="section-title">Current View</h2>
-              <div className="sidebar-metric-list">
+            <details className="section sidebar-panel" open>
+              <summary className="section-title sidebar-summary">Current View</summary>
+              <div className="sidebar-metric-list sidebar-collapsible-body">
                 <div className="sidebar-metric">
                   <span>Numbers shown as</span>
                   <strong>{numberFormat === 'dec' ? 'Decimal' : 'Hex'}</strong>
@@ -347,7 +413,41 @@ export default function App() {
                   <strong>{hasData ? (activeControlEvents.length === 0 ? 'Stable' : `${activeControlEvents.length} events`) : '--'}</strong>
                 </div>
               </div>
-            </section>
+            </details>
+
+            <details className="section sidebar-panel" open>
+              <summary className="section-title sidebar-summary">Performance Metrics</summary>
+              <div className="sidebar-metric-list sidebar-collapsible-body">
+                <div className="sidebar-metric">
+                  <MetricTooltip
+                    label="Total CPI"
+                    description="Total CPI = total captured cycles / retired instructions. Retired instructions are counted from non-NOP instructions observed in the writeback stage."
+                  />
+                  <strong>{hasData ? formatCpi(total, performanceMetrics.retiredInstructions) : '--'}</strong>
+                </div>
+                <div className="sidebar-metric">
+                  <MetricTooltip
+                    label="Branch mispredict penalty"
+                    description="Estimated penalty % = (2 penalty cycles per mispredicted JXX branch / total captured cycles) × 100. A misprediction is counted when execute has JXX and e_Cnd = 0."
+                  />
+                  <strong>{hasData ? formatPercentPrecise(performanceMetrics.branchPenaltyPercent) : '--'}</strong>
+                </div>
+                <div className="sidebar-metric">
+                  <MetricTooltip
+                    label="Data hazard stall cycles"
+                    description="Counts cycles matching the data-hazard stall pattern: F_stall=1, D_stall=1, and E_bubble=1, excluding branch-mispredict cycles."
+                  />
+                  <strong>{hasData ? performanceMetrics.dataHazardStallCycles : '--'}</strong>
+                </div>
+                <div className="sidebar-metric">
+                  <MetricTooltip
+                    label="Retired instructions"
+                    description="Number of non-NOP instructions observed in the writeback stage across all captured cycles."
+                  />
+                  <strong>{hasData ? performanceMetrics.retiredInstructions : '--'}</strong>
+                </div>
+              </div>
+            </details>
           </div>
         </aside>
 
@@ -392,7 +492,7 @@ export default function App() {
 
           <section className="section" id="pipeline-stages">
             <h2 className="section-title">Pipeline Stages</h2>
-            <PipelineDiagram cycleData={currentCycle} numberFormat={numberFormat} />
+            <PipelineDiagram cycleData={currentCycle} numberFormat={numberFormat} control={control} />
           </section>
 
           {currentCycle ? (
@@ -401,19 +501,50 @@ export default function App() {
                 <h2 className="section-title">Cycle Insights</h2>
 
                 <div className="insight-block">
+                  <div className="insight-heading">At a Glance</div>
+                  <div className="summary-grid summary-grid-compact">
+                    <div className="stat-card">
+                      <div className="stat-label">Hazard State</div>
+                      <div className="stat-value stat-value-compact">{activeControlEvents.length === 0 ? 'Stable' : 'Active'}</div>
+                      <div className="stat-note">{hazardHeadline}</div>
+                    </div>
+                    <div className="stat-card">
+                      <div className="stat-label">Condition Codes</div>
+                      <div className="stat-value stat-value-compact">{formatSmallValue(flags?.cc_hex ?? 'x')}</div>
+                      <div className="stat-note">
+                        ZF {flagStateLabel(flags?.zf)} | SF {flagStateLabel(flags?.sf)} | OF {flagStateLabel(flags?.of)}
+                      </div>
+                    </div>
+                    <div className="stat-card">
+                      <div className="stat-label">Pending new_cc</div>
+                      <div className="stat-value stat-value-compact">{formatSmallValue(flags?.new_cc_hex ?? 'x')}</div>
+                      <div className="stat-note">
+                        ZF {flagStateLabel(flags?.new_zf)} | SF {flagStateLabel(flags?.new_sf)} | OF {flagStateLabel(flags?.new_of)}
+                      </div>
+                    </div>
+                    <div className="stat-card">
+                      <div className="stat-label">Registers Changed</div>
+                      <div className="stat-value">{changedRegisters.length}</div>
+                      <div className="stat-note">{cycleIdx === 0 ? 'Baseline cycle' : 'Compared to previous cycle'}</div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="insight-block">
                   <div className="insight-heading">Control & Flags</div>
                   <div className="control-panels">
                     <div className="control-card">
                       <div className="control-card-title">Hazard / Control Signals</div>
                       <div className="control-headline">{hazardHeadline}</div>
-                      <div className="control-grid">
-                        {controlRows.map(([label, value]) => (
-                          <div key={label} className={`control-cell${value === true ? ' control-cell-active' : ''}`}>
-                            <span className="control-cell-label">{label}</span>
-                            <span className="control-cell-value">{formatBool(value)}</span>
-                          </div>
-                        ))}
-                      </div>
+                      {activeControlEvents.length > 0 ? (
+                        <div className="chip-list" aria-label="Active control events">
+                          {activeControlEvents.map((event) => (
+                            <span key={event} className="event-chip">{event}</span>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="empty-note">No stalls, bubbles, or branch redirects are active in this cycle.</div>
+                      )}
                     </div>
 
                     <div className="control-card">
@@ -444,50 +575,7 @@ export default function App() {
                         ))}
                       </div>
 
-                      <div className="meta-list">
-                        <div className="meta-row">
-                          <span>Fetch `f_predPC`</span>
-                          <code>{formatAddressValue(meta?.predPC ?? 'x')}</code>
-                        </div>
-                        <div className="meta-row">
-                          <span>F reg `F_predPC`</span>
-                          <code>{formatAddressValue(meta?.fetchRegPredPC ?? 'x')}</code>
-                        </div>
-                        <div className="meta-row">
-                          <span>Memory `m_stat`</span>
-                          <code>{meta?.memory_stat?.name ?? 'x'} ({formatSmallValue(meta?.memory_stat?.hex ?? 'x')})</code>
-                        </div>
-                      </div>
                     </div>
-                  </div>
-                </div>
-
-                <div className="insight-block">
-                  <div className="insight-heading">Stage Details</div>
-                  <div className="stage-detail-list">
-                    {stageDetails.map((stage) => {
-                      const icodeDisplay = formatOpcodeValue(stage.icode, numberFormat);
-                      const changed = previousCycle && stage.previousIcodeName !== stage.icodeName;
-                      return (
-                        <div key={stage.key} className={`stage-detail-item${changed ? ' stage-detail-changed' : ''}`}>
-                          <div className="stage-detail-label">{stage.label}</div>
-                          <div className="stage-detail-main">
-                            <span className="stage-detail-icode">{stage.icodeName}</span>
-                            <span className="stage-detail-hex">{icodeDisplay}</span>
-                          </div>
-                          <div className="stage-inline-meta">
-                            <span>PC {formatAddressValue(stage.pcHex)}</span>
-                            <span>ifun {formatSmallValue(stage.ifunHex)}</span>
-                            <span>stat {stage.statName} ({formatSmallValue(stage.statHex)})</span>
-                          </div>
-                          <div className="stage-detail-note">
-                            {previousCycle
-                              ? (changed ? `Changed from ${stage.previousIcodeName ?? 'x'}` : 'Unchanged from previous cycle')
-                              : 'First captured cycle'}
-                          </div>
-                        </div>
-                      );
-                    })}
                   </div>
                 </div>
 
@@ -510,6 +598,80 @@ export default function App() {
                     </div>
                   )}
                 </div>
+
+                <details className="insight-advanced">
+                  <summary className="insight-advanced-summary">Advanced Details</summary>
+                  <div className="insight-advanced-body">
+                    <div className="insight-block">
+                      <div className="insight-heading">Raw Control Bits</div>
+                      <div className="control-grid">
+                        {controlRows.map(([label, value]) => (
+                          <div key={label} className={`control-cell${value === true ? ' control-cell-active' : ''}`}>
+                            <span className="control-cell-label">{label}</span>
+                            <span className="control-cell-value">{formatBool(value)}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="insight-block">
+                      <div className="insight-heading">Metadata</div>
+                      <div className="meta-list">
+                        <div className="meta-row">
+                          <span>Fetch `f_predPC`</span>
+                          <code>{formatAddressValue(meta?.predPC ?? 'x')}</code>
+                        </div>
+                        <div className="meta-row">
+                          <span>F reg `F_predPC`</span>
+                          <code>{formatAddressValue(meta?.fetchRegPredPC ?? 'x')}</code>
+                        </div>
+                        <div className="meta-row">
+                          <span>Memory `m_stat`</span>
+                          <code>{meta?.memory_stat?.name ?? 'x'} ({formatSmallValue(meta?.memory_stat?.hex ?? 'x')})</code>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="insight-block">
+                      <div className="insight-heading">Stage Details</div>
+                      <table className="stage-detail-table">
+                        <thead>
+                          <tr>
+                            <th>Stage</th>
+                            <th>Instruction</th>
+                            <th>PC</th>
+                            <th>ifun</th>
+                            <th>stat</th>
+                            <th>Δ</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {stageDetails.map((stage) => {
+                            const icodeDisplay = formatOpcodeValue(stage.icode, numberFormat);
+                            const changed = previousCycle && stage.previousIcodeName !== stage.icodeName;
+                            return (
+                              <tr key={stage.key} className={changed ? 'stage-row-changed' : ''}>
+                                <td className="stage-col-label">{stage.label}</td>
+                                <td>
+                                  <span className="stage-detail-icode">{stage.icodeName}</span>
+                                  <span className="stage-detail-hex"> {icodeDisplay}</span>
+                                </td>
+                                <td className="mono-cell">{formatAddressValue(stage.pcHex)}</td>
+                                <td className="mono-cell">{formatSmallValue(stage.ifunHex)}</td>
+                                <td className="mono-cell">{stage.statName}</td>
+                                <td className="stage-col-delta">
+                                  {previousCycle
+                                    ? (changed ? `← ${stage.previousIcodeName ?? 'x'}` : '—')
+                                    : '—'}
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </details>
               </section>
 
               <RegisterFile
