@@ -150,8 +150,19 @@ preg #(4) W_dstM_reg(W_dstM, M_dstM, W_stall, W_bubble, 4'hF, clock);
 initial begin
 	//$monitor ($time,"ns:  clock=%b, PC=%h, icode=%h, ifun=%h, valP=%h\n",clock,PC,icode,ifun,valP); 
 	$dumpfile("sim/proc.vcd");
-    	$dumpvars(0,f_icode,D_icode,E_icode,M_icode,W_icode, clock, rax, 
-rcx, rdx, rbx, rsp, rbp, rsi, rdi,r8, r9, r10, r11, r12, r13, r14);
+    	$dumpvars(
+		0,
+		f_pc, f_predPC, F_predPC,
+		f_stat, f_icode, f_ifun, instr_valid, imem_error,
+		D_stat, D_pc, D_icode, D_ifun,
+		E_stat, E_pc, E_icode, E_ifun, e_Cnd,
+		M_stat, M_pc, M_icode, M_ifun, M_Cnd, m_stat,
+		W_stat, W_pc, W_icode,
+		cc, set_cc, new_cc,
+		F_stall, F_bubble, D_stall, D_bubble, E_stall, E_bubble, M_stall, M_bubble, W_stall, W_bubble,
+		clock,
+		rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14
+	);
 	//valE='h2A382812;
 	//#10;
 	for(j=0;j<610;j++) begin 

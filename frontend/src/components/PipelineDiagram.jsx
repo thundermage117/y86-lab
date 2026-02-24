@@ -25,16 +25,30 @@ function StageBox({ label, stage }) {
   const icodeHex = icode !== null && icode !== undefined
     ? `0x${icode.toString(16).toUpperCase()}`
     : 'x';
+  const ifunHex = stage?.ifun_hex ?? 'x';
+  const pcHex = stage?.pc_hex ?? 'x';
+  const statName = stage?.stat_name ?? 'x';
+  const tooltip = [
+    `${label}: ${name} (${icodeHex})`,
+    pcHex !== 'x' ? `PC ${pcHex}` : null,
+    ifunHex !== 'x' ? `ifun ${ifunHex}` : null,
+    statName !== 'x' ? `stat ${statName}` : null,
+  ].filter(Boolean).join(' | ');
 
   return (
     <div
       className="stage-box"
       style={{ borderColor: bg }}
-      title={`${label}: ${name} (${icodeHex})`}
+      title={tooltip}
     >
       <div className="stage-label">{label}</div>
       <div className="stage-icode" style={{ background: bg }}>{name}</div>
       <div className="stage-hex">{icodeHex}</div>
+      <div className="stage-meta">
+        {pcHex !== 'x' && <span className="stage-meta-chip">PC {pcHex}</span>}
+        {ifunHex !== 'x' && <span className="stage-meta-chip">ifun {ifunHex}</span>}
+        {statName !== 'x' && <span className="stage-meta-chip">stat {statName}</span>}
+      </div>
     </div>
   );
 }

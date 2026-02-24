@@ -16,12 +16,27 @@ const ICODE_NAMES = {
   0xB: 'POPQ',
 };
 
+const STAT_NAMES = {
+  0x0: 'AOK',
+  0x1: 'HLT',
+  0x2: 'ADR',
+  0x3: 'INS',
+};
+
+const REG_NAMES = ['rax', 'rcx', 'rdx', 'rbx', 'rsp', 'rbp', 'rsi', 'rdi',
+                   'r8', 'r9', 'r10', 'r11', 'r12', 'r13', 'r14'];
+
 // Signals we care about from proc.vcd
 const SIGNALS_OF_INTEREST = new Set([
   'f_icode', 'D_icode', 'E_icode', 'M_icode', 'W_icode',
+  'f_ifun', 'D_ifun', 'E_ifun', 'M_ifun',
+  'f_stat', 'D_stat', 'E_stat', 'M_stat', 'W_stat', 'm_stat',
+  'f_pc', 'f_predPC', 'F_predPC', 'D_pc', 'E_pc', 'M_pc', 'W_pc',
+  'cc', 'new_cc', 'set_cc', 'e_Cnd', 'M_Cnd',
+  'instr_valid', 'imem_error',
+  'F_stall', 'F_bubble', 'D_stall', 'D_bubble', 'E_stall', 'E_bubble', 'M_stall', 'M_bubble', 'W_stall', 'W_bubble',
   'clock',
-  'rax', 'rcx', 'rdx', 'rbx', 'rsp', 'rbp', 'rsi', 'rdi',
-  'r8', 'r9', 'r10', 'r11', 'r12', 'r13', 'r14',
+  ...REG_NAMES,
 ]);
 
 /**
@@ -142,32 +157,102 @@ function buildSnapshot(current, symbolToName) {
     return sym !== undefined ? current[sym] : null;
   }
 
-  function makeStage(signalName) {
+  function fmtHex(val, widthNibbles = 16) {
+    if (val === null) return 'x';
+    return '0x' + val.toString(16).padStart(widthNibbles, '0');
+  }
+
+  function fmtSmallHex(val) {
+    if (val === null) return 'x';
+    return '0x' + val.toString(16).toUpperCase();
+  }
+
+  function fmtStat(val) {
+    if (val === null) return { raw: null, hex: 'x', name: 'x' };
+    return {
+      raw: val,
+      hex: fmtSmallHex(val),
+      name: STAT_NAMES[val] ?? `0x${val.toString(16).toUpperCase()}`,
+    };
+  }
+
+  function fmtBoolean(name) {
+    const val = getVal(name);
+    if (val === null) return null;
+    return Boolean(val);
+  }
+
+  function makeStage(stageKey, signalName, opts = {}) {
     const icode = getVal(signalName);
+    const statVal = opts.statSignal ? getVal(opts.statSignal) : null;
+    const ifunVal = opts.ifunSignal ? getVal(opts.ifunSignal) : null;
+    const pcVal = opts.pcSignal ? getVal(opts.pcSignal) : null;
+    const stat = fmtStat(statVal);
     return {
       icode,
       icode_name: icode !== null ? (ICODE_NAMES[icode] ?? `0x${icode.toString(16)}`) : 'x',
+      ifun: ifunVal,
+      ifun_hex: fmtSmallHex(ifunVal),
+      pc: pcVal,
+      pc_hex: fmtHex(pcVal),
+      stat: stat.raw,
+      stat_hex: stat.hex,
+      stat_name: stat.name,
+      stage: stageKey,
     };
   }
 
   function fmtReg(name) {
-    const val = getVal(name);
-    if (val === null) return 'x';
-    return '0x' + val.toString(16).padStart(16, '0');
+    return fmtHex(getVal(name));
   }
 
-  const REG_NAMES = ['rax', 'rcx', 'rdx', 'rbx', 'rsp', 'rbp', 'rsi', 'rdi',
-                     'r8', 'r9', 'r10', 'r11', 'r12', 'r13', 'r14'];
   const registers = {};
   for (const r of REG_NAMES) registers[r] = fmtReg(r);
 
+  const ccVal = getVal('cc');
+  const newCcVal = getVal('new_cc');
+
   return {
-    fetch:     makeStage('f_icode'),
-    decode:    makeStage('D_icode'),
-    execute:   makeStage('E_icode'),
-    memory:    makeStage('M_icode'),
-    writeback: makeStage('W_icode'),
+    fetch: makeStage('fetch', 'f_icode', { ifunSignal: 'f_ifun', statSignal: 'f_stat', pcSignal: 'f_pc' }),
+    decode: makeStage('decode', 'D_icode', { ifunSignal: 'D_ifun', statSignal: 'D_stat', pcSignal: 'D_pc' }),
+    execute: makeStage('execute', 'E_icode', { ifunSignal: 'E_ifun', statSignal: 'E_stat', pcSignal: 'E_pc' }),
+    memory: makeStage('memory', 'M_icode', { ifunSignal: 'M_ifun', statSignal: 'M_stat', pcSignal: 'M_pc' }),
+    writeback: makeStage('writeback', 'W_icode', { statSignal: 'W_stat', pcSignal: 'W_pc' }),
     registers,
+    control: {
+      F_stall: fmtBoolean('F_stall'),
+      F_bubble: fmtBoolean('F_bubble'),
+      D_stall: fmtBoolean('D_stall'),
+      D_bubble: fmtBoolean('D_bubble'),
+      E_stall: fmtBoolean('E_stall'),
+      E_bubble: fmtBoolean('E_bubble'),
+      M_stall: fmtBoolean('M_stall'),
+      M_bubble: fmtBoolean('M_bubble'),
+      W_stall: fmtBoolean('W_stall'),
+      W_bubble: fmtBoolean('W_bubble'),
+      instr_valid: fmtBoolean('instr_valid'),
+      imem_error: fmtBoolean('imem_error'),
+    },
+    flags: {
+      cc: ccVal,
+      cc_hex: fmtSmallHex(ccVal),
+      zf: ccVal === null ? null : Boolean(ccVal & 0b001),
+      sf: ccVal === null ? null : Boolean(ccVal & 0b010),
+      of: ccVal === null ? null : Boolean(ccVal & 0b100),
+      new_cc: newCcVal,
+      new_cc_hex: fmtSmallHex(newCcVal),
+      new_zf: newCcVal === null ? null : Boolean(newCcVal & 0b001),
+      new_sf: newCcVal === null ? null : Boolean(newCcVal & 0b010),
+      new_of: newCcVal === null ? null : Boolean(newCcVal & 0b100),
+      set_cc: fmtBoolean('set_cc'),
+      e_Cnd: fmtBoolean('e_Cnd'),
+      M_Cnd: fmtBoolean('M_Cnd'),
+    },
+    meta: {
+      predPC: fmtHex(getVal('f_predPC')),
+      fetchRegPredPC: fmtHex(getVal('F_predPC')),
+      memory_stat: fmtStat(getVal('m_stat')),
+    },
   };
 }
 

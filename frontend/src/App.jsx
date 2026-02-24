@@ -12,6 +12,16 @@ function formatPercent(value) {
   return `${Math.round(value)}%`;
 }
 
+function formatBool(value) {
+  if (value === null || value === undefined) return 'x';
+  return value ? '1' : '0';
+}
+
+function flagStateLabel(value) {
+  if (value === null || value === undefined) return 'x';
+  return value ? 'set' : 'clear';
+}
+
 export default function App() {
   const [cycles, setCycles] = useState([]);
   const [cycleIdx, setCycleIdx] = useState(0);
@@ -24,6 +34,9 @@ export default function App() {
   const previousCycle = cycleIdx > 0 ? cycles[cycleIdx - 1] ?? null : null;
   const total = cycles.length;
   const hasData = total > 0;
+  const control = currentCycle?.control ?? null;
+  const flags = currentCycle?.flags ?? null;
+  const meta = currentCycle?.meta ?? null;
 
   const activeStages = currentCycle
     ? STAGE_KEYS.filter((key) => currentCycle[key]?.icode_name && currentCycle[key].icode_name !== 'x').length
@@ -46,8 +59,55 @@ export default function App() {
         icodeName: currentCycle[key]?.icode_name ?? 'x',
         icode: currentCycle[key]?.icode,
         previousIcodeName: previousCycle?.[key]?.icode_name ?? null,
+        ifunHex: currentCycle[key]?.ifun_hex ?? 'x',
+        pcHex: currentCycle[key]?.pc_hex ?? 'x',
+        statName: currentCycle[key]?.stat_name ?? 'x',
+        statHex: currentCycle[key]?.stat_hex ?? 'x',
       }))
     : [];
+
+  const activeControlEvents = [];
+  if (control?.F_stall) activeControlEvents.push('F_stall');
+  if (control?.D_stall) activeControlEvents.push('D_stall');
+  if (control?.D_bubble) activeControlEvents.push('D_bubble');
+  if (control?.E_stall) activeControlEvents.push('E_stall');
+  if (control?.E_bubble) activeControlEvents.push('E_bubble');
+  if (control?.M_stall) activeControlEvents.push('M_stall');
+  if (control?.M_bubble) activeControlEvents.push('M_bubble');
+  if (control?.W_stall) activeControlEvents.push('W_stall');
+  if (control?.W_bubble) activeControlEvents.push('W_bubble');
+  if (flags?.set_cc) activeControlEvents.push('set_cc');
+  if (flags?.e_Cnd === false && currentCycle?.execute?.icode_name === 'JXX') activeControlEvents.push('branch_not_taken');
+
+  const hazardHeadline = !currentCycle
+    ? 'No cycle selected'
+    : activeControlEvents.length === 0
+      ? 'No hazard controls active'
+      : activeControlEvents.join(', ');
+
+  const controlRows = control ? [
+    ['F_stall', control.F_stall],
+    ['D_stall', control.D_stall],
+    ['D_bubble', control.D_bubble],
+    ['E_bubble', control.E_bubble],
+    ['instr_valid', control.instr_valid],
+    ['imem_error', control.imem_error],
+    ['set_cc', flags?.set_cc ?? null],
+    ['e_Cnd', flags?.e_Cnd ?? null],
+    ['M_Cnd', flags?.M_Cnd ?? null],
+  ] : [];
+
+  const ccRows = flags ? [
+    ['ZF', flags.zf],
+    ['SF', flags.sf],
+    ['OF', flags.of],
+  ] : [];
+
+  const newCcRows = flags ? [
+    ['new ZF', flags.new_zf],
+    ['new SF', flags.new_sf],
+    ['new OF', flags.new_of],
+  ] : [];
 
   const stageOccupancy = hasData ? (activeStages / STAGE_KEYS.length) * 100 : 0;
   const progressPercent = total > 1 ? (cycleIdx / (total - 1)) * 100 : hasData ? 100 : 0;
@@ -242,11 +302,15 @@ export default function App() {
                 <div className="stat-note">Out of 15 tracked architectural registers</div>
               </div>
               <div className="stat-card">
-                <div className="stat-label">Pipeline Snapshot</div>
+                <div className="stat-label">Control Activity</div>
                 <div className="stat-value stat-value-compact">
-                  {stageDetails.map((stage) => stage.icodeName).join(' | ')}
+                  {activeControlEvents.length === 0 ? 'stable' : activeControlEvents.slice(0, 4).join(' | ')}
                 </div>
-                <div className="stat-note">Fetch to Writeback</div>
+                <div className="stat-note">
+                  {activeControlEvents.length > 4
+                    ? `+${activeControlEvents.length - 4} more events this cycle`
+                    : (meta?.predPC && meta.predPC !== 'x' ? `predPC ${meta.predPC}` : 'No stalls/bubbles asserted')}
+                </div>
               </div>
             </div>
           </section>
@@ -263,6 +327,68 @@ export default function App() {
               <h2 className="section-title">Cycle Insights</h2>
 
               <div className="insight-block">
+                <div className="insight-heading">Control & Flags</div>
+                <div className="control-panels">
+                  <div className="control-card">
+                    <div className="control-card-title">Hazard / Control Signals</div>
+                    <div className="control-headline">{hazardHeadline}</div>
+                    <div className="control-grid">
+                      {controlRows.map(([label, value]) => (
+                        <div key={label} className={`control-cell${value === true ? ' control-cell-active' : ''}`}>
+                          <span className="control-cell-label">{label}</span>
+                          <span className="control-cell-value">{formatBool(value)}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="control-card">
+                    <div className="control-card-title">Condition Codes</div>
+                    <div className="flag-row">
+                      <span className="flag-caption">Current CC</span>
+                      <span className="flag-hex">{flags?.cc_hex ?? 'x'}</span>
+                    </div>
+                    <div className="flag-grid">
+                      {ccRows.map(([label, value]) => (
+                        <div key={label} className="flag-chip">
+                          <span>{label}</span>
+                          <strong>{flagStateLabel(value)}</strong>
+                        </div>
+                      ))}
+                    </div>
+
+                    <div className="flag-row flag-row-secondary">
+                      <span className="flag-caption">Pending `new_cc`</span>
+                      <span className="flag-hex">{flags?.new_cc_hex ?? 'x'}</span>
+                    </div>
+                    <div className="flag-grid">
+                      {newCcRows.map(([label, value]) => (
+                        <div key={label} className="flag-chip">
+                          <span>{label}</span>
+                          <strong>{flagStateLabel(value)}</strong>
+                        </div>
+                      ))}
+                    </div>
+
+                    <div className="meta-list">
+                      <div className="meta-row">
+                        <span>Fetch `f_predPC`</span>
+                        <code>{meta?.predPC ?? 'x'}</code>
+                      </div>
+                      <div className="meta-row">
+                        <span>F reg `F_predPC`</span>
+                        <code>{meta?.fetchRegPredPC ?? 'x'}</code>
+                      </div>
+                      <div className="meta-row">
+                        <span>Memory `m_stat`</span>
+                        <code>{meta?.memory_stat?.name ?? 'x'} ({meta?.memory_stat?.hex ?? 'x'})</code>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="insight-block">
                 <div className="insight-heading">Stage Details</div>
                 <div className="stage-detail-list">
                   {stageDetails.map((stage) => {
@@ -276,6 +402,11 @@ export default function App() {
                         <div className="stage-detail-main">
                           <span className="stage-detail-icode">{stage.icodeName}</span>
                           <span className="stage-detail-hex">{icodeHex}</span>
+                        </div>
+                        <div className="stage-inline-meta">
+                          <span>PC {stage.pcHex}</span>
+                          <span>ifun {stage.ifunHex}</span>
+                          <span>stat {stage.statName} ({stage.statHex})</span>
                         </div>
                         <div className="stage-detail-note">
                           {previousCycle
