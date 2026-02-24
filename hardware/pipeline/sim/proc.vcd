@@ -1,5 +1,5 @@
 $date
-	Wed Mar 09 14:36:29 2022
+	Tue Feb 24 21:04:46 2026
 $end
 $version
 	Icarus Verilog
@@ -71,6 +71,9 @@ $scope module proc $end
 $var wire 64 5 r14 [63:0] $end
 $upscope $end
 $enddefinitions $end
+$comment Show the parameter values. $end
+$dumpall
+$end
 #0
 $dumpvars
 bx 5
@@ -6042,7 +6045,6 @@ b0 $
 #12150
 0&
 #12160
-b1 $
 b0 %
 1&
 #12170

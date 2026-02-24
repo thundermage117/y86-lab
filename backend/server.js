@@ -9,7 +9,7 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-const HARDWARE_DIR = path.join(__dirname, '..', 'hardware', 'pipeline', 'src');
+const PIPELINE_DIR = path.join(__dirname, '..', 'hardware', 'pipeline');
 const VCD_PATH = path.join(__dirname, '..', 'hardware', 'pipeline', 'sim', 'proc.vcd');
 
 /**
@@ -23,14 +23,17 @@ const VCD_PATH = path.join(__dirname, '..', 'hardware', 'pipeline', 'sim', 'proc
 app.get('/api/simulate', (req, res) => {
   // Try to regenerate the VCD by running iverilog + vvp
   try {
-    execSync('iverilog -o proc.vvp proc.v && vvp proc.vvp', {
-      cwd: HARDWARE_DIR,
+    execSync('iverilog -I src -o src/proc.vvp src/proc.v && vvp src/proc.vvp', {
+      cwd: PIPELINE_DIR,
       timeout: 30000,
+      stdio: 'pipe',
     });
     console.log('Simulation re-run successfully.');
   } catch (err) {
     // iverilog may not be installed; fall through to use existing proc.vcd
-    console.warn('Could not run iverilog (using pre-existing proc.vcd):', err.message.split('\n')[0]);
+    const stderr = err.stderr ? String(err.stderr).trim().split('\n')[0] : null;
+    const detail = stderr || err.message.split('\n')[0];
+    console.warn('Could not run iverilog (using pre-existing proc.vcd):', detail);
   }
 
   // Parse the VCD

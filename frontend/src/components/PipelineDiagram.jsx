@@ -27,7 +27,11 @@ function StageBox({ label, stage }) {
     : 'x';
 
   return (
-    <div className="stage-box" style={{ borderColor: bg }}>
+    <div
+      className="stage-box"
+      style={{ borderColor: bg }}
+      title={`${label}: ${name} (${icodeHex})`}
+    >
       <div className="stage-label">{label}</div>
       <div className="stage-icode" style={{ background: bg }}>{name}</div>
       <div className="stage-hex">{icodeHex}</div>
@@ -44,16 +48,38 @@ export default function PipelineDiagram({ cycleData }) {
     );
   }
 
+  const presentOpcodes = Array.from(new Set(
+    STAGE_KEYS
+      .map((key) => cycleData[key]?.icode_name ?? 'x')
+      .filter(Boolean),
+  ));
+
   return (
-    <div className="pipeline-diagram">
-      {STAGE_KEYS.map((key, i) => (
-        <div key={key} className="stage-wrapper">
-          <StageBox label={STAGE_LABELS[i]} stage={cycleData[key]} />
-          {i < STAGE_KEYS.length - 1 && (
-            <div className="stage-arrow">▶</div>
-          )}
-        </div>
-      ))}
+    <div className="pipeline-diagram-wrap">
+      <div className="pipeline-diagram">
+        {STAGE_KEYS.map((key, i) => (
+          <div key={key} className="stage-wrapper">
+            <StageBox label={STAGE_LABELS[i]} stage={cycleData[key]} />
+            {i < STAGE_KEYS.length - 1 && (
+              <div className="stage-arrow">▶</div>
+            )}
+          </div>
+        ))}
+      </div>
+
+      <div className="pipeline-legend" aria-label="Opcode legend for this cycle">
+        <span className="legend-title">Opcodes in view</span>
+        {presentOpcodes.map((opcode) => (
+          <span key={opcode} className="legend-chip">
+            <span
+              className="legend-swatch"
+              style={{ background: ICODE_COLORS[opcode] ?? '#4a4f63' }}
+              aria-hidden="true"
+            />
+            {opcode}
+          </span>
+        ))}
+      </div>
     </div>
   );
 }
