@@ -2,7 +2,19 @@
 
 An interactive web-based visualizer for a 5-stage pipelined Y86-64 CPU implemented in Verilog. Step through each clock cycle and inspect the instruction in every pipeline stage alongside the architectural register state.
 
-> Y86-64 is the pedagogical ISA from *Computer Systems: A Programmer's Perspective* by Bryant & O'Hallaron.
+> Y86-64 is the ISA from *Computer Systems: A Programmer's Perspective* by Bryant & O'Hallaron.
+
+## Key Features
+* **Cycle-by-Cycle Stepping:** Navigate the execution timeline forward and backward to see exactly how instructions progress.
+* **Pipeline Staircase Timeline:** Visualize the "staircase" execution pattern across all 5 stages (Fetch, Decode, Execute, Memory, Writeback).
+* **Data Forwarding Visualization:** See dynamic dependency arrows showing how the processor resolves data hazards via forwarding and bypassing.
+* **Architectural State Inspector:** View total register file state with highlights on changed values.
+* **Instruction Memory Hex Viewer:** Inspect the loaded binary program, tracing the PC as it fetches bytes.
+
+## Tech Stack
+* **Hardware:** Verilog (simulated via Icarus Verilog), waveform parsing via Node.js
+* **Backend:** Node.js, Express (parses VCD traces & serves simulation API)
+* **Frontend:** React, Vite, plain CSS (no heavy UI libraries for max performance)
 
 ## Project Structure
 
@@ -107,14 +119,6 @@ Open [http://localhost:5173](http://localhost:5173), click **Load Simulation**, 
 | Memory | `M_icode` | same |
 | Writeback | `W_icode` | same |
 
-## Tech Stack
-
-| Layer | Technology |
-|-------|-----------|
-| Hardware | Verilog (Icarus Verilog) |
-| Backend | Node.js, Express |
-| Frontend | React, Vite |
-
 ## Hardware Commands
 
 > All commands must be run from the hardware implementation's root directory (e.g. `hardware/pipeline/`) so that `$readmemh` can find the data files (`DATA_MEM.txt` etc.) at runtime.
@@ -155,3 +159,13 @@ iverilog -o register_tb.vvp tb/register_tb.v && vvp register_tb.vvp
 ```
 
 > The backend also attempts to re-run the pipeline simulation automatically on each `/api/simulate` request if `iverilog` is in `PATH`. Without it, the pre-existing `sim/proc.vcd` is used.
+
+## Roadmap & Future Enhancements
+- [x] Base 5-Stage Pipeline Visualization
+- [x] Register File Tracking
+- [x] Data Forwarding & Bypassing UI
+- [x] Instruction Memory Viewer
+- [x] Pipeline Execution Timeline
+- [ ] **Data Memory Hex Viewer:** Interactively view memory reads and writes.
+- [ ] **Live Y86 Assembler:** Write assembly in the browser, compile it on the server, and instantly visualize the execution trace.
+- [ ] **TinyC Compiler Integration:** Compile higher-level C code down to Y86 for visualization.
