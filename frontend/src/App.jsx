@@ -8,6 +8,16 @@ const API_URL = 'http://localhost:3001/api/simulate';
 const PLAY_INTERVAL_MS = 200;
 const ZERO_REG = '0x0000000000000000';
 const STAGE_KEYS = ['fetch', 'decode', 'execute', 'memory', 'writeback'];
+const THEME_STORAGE_KEY = 'y86-pipeline-theme';
+
+function getInitialTheme() {
+  if (typeof window === 'undefined') return 'dark';
+
+  const savedTheme = window.localStorage.getItem(THEME_STORAGE_KEY);
+  if (savedTheme === 'light' || savedTheme === 'dark') return savedTheme;
+
+  return window.matchMedia?.('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+}
 
 function formatPercent(value) {
   return `${Math.round(value)}%`;
@@ -105,6 +115,7 @@ export default function App() {
   const [error, setError] = useState(null);
   const [playing, setPlaying] = useState(false);
   const [numberFormat, setNumberFormat] = useState('dec');
+  const [theme, setTheme] = useState(getInitialTheme);
   const playTimer = useRef(null);
 
   const currentCycle = cycles[cycleIdx] ?? null;
@@ -280,6 +291,12 @@ export default function App() {
     return () => window.removeEventListener('keydown', onKeyDown);
   }, [hasData, total, prev, next, togglePlay]);
 
+  useEffect(() => {
+    document.documentElement.dataset.theme = theme;
+    document.documentElement.style.colorScheme = theme;
+    window.localStorage.setItem(THEME_STORAGE_KEY, theme);
+  }, [theme]);
+
   return (
     <div className="app">
       <header className="app-header">
@@ -288,6 +305,18 @@ export default function App() {
           <p className="subtitle">Cycle-by-cycle inspection of the 5-stage pipelined processor with register activity and stage occupancy insights.</p>
         </div>
         <div className="header-status">
+          <button
+            type="button"
+            className="theme-toggle-btn"
+            onClick={() => setTheme((prevTheme) => (prevTheme === 'dark' ? 'light' : 'dark'))}
+            aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} theme`}
+            title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} theme`}
+            aria-pressed={theme === 'light'}
+          >
+            <span className="theme-toggle-icon" aria-hidden="true">
+              {theme === 'dark' ? '☾' : '☀'}
+            </span>
+          </button>
           <div className={`status-pill status-${error ? 'error' : loading ? 'busy' : 'ok'}`}>
             {runStateLabel}
           </div>
