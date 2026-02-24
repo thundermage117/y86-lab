@@ -1,3 +1,5 @@
+import { formatNumericString, formatOpcodeValue } from '../utils/numberFormat';
+
 const STAGE_LABELS = ['FETCH', 'DECODE', 'EXECUTE', 'MEMORY', 'WRITEBACK'];
 const STAGE_KEYS = ['fetch', 'decode', 'execute', 'memory', 'writeback'];
 
@@ -18,20 +20,20 @@ const ICODE_COLORS = {
   x:       '#333645',
 };
 
-function StageBox({ label, stage }) {
+function StageBox({ label, stage, numberFormat }) {
   const name = stage?.icode_name ?? 'x';
   const icode = stage?.icode;
   const bg = ICODE_COLORS[name] ?? '#4a4f63';
-  const icodeHex = icode !== null && icode !== undefined
-    ? `0x${icode.toString(16).toUpperCase()}`
-    : 'x';
+  const icodeDisplay = formatOpcodeValue(icode, numberFormat);
   const ifunHex = stage?.ifun_hex ?? 'x';
   const pcHex = stage?.pc_hex ?? 'x';
   const statName = stage?.stat_name ?? 'x';
+  const ifunDisplay = formatNumericString(ifunHex, numberFormat);
+  const pcDisplay = formatNumericString(pcHex, numberFormat);
   const tooltip = [
-    `${label}: ${name} (${icodeHex})`,
-    pcHex !== 'x' ? `PC ${pcHex}` : null,
-    ifunHex !== 'x' ? `ifun ${ifunHex}` : null,
+    `${label}: ${name} (${icodeDisplay})`,
+    pcHex !== 'x' ? `PC ${pcDisplay}` : null,
+    ifunHex !== 'x' ? `ifun ${ifunDisplay}` : null,
     statName !== 'x' ? `stat ${statName}` : null,
   ].filter(Boolean).join(' | ');
 
@@ -43,17 +45,17 @@ function StageBox({ label, stage }) {
     >
       <div className="stage-label">{label}</div>
       <div className="stage-icode" style={{ background: bg }}>{name}</div>
-      <div className="stage-hex">{icodeHex}</div>
+      <div className="stage-hex">{icodeDisplay}</div>
       <div className="stage-meta">
-        {pcHex !== 'x' && <span className="stage-meta-chip">PC {pcHex}</span>}
-        {ifunHex !== 'x' && <span className="stage-meta-chip">ifun {ifunHex}</span>}
+        {pcHex !== 'x' && <span className="stage-meta-chip">PC {pcDisplay}</span>}
+        {ifunHex !== 'x' && <span className="stage-meta-chip">ifun {ifunDisplay}</span>}
         {statName !== 'x' && <span className="stage-meta-chip">stat {statName}</span>}
       </div>
     </div>
   );
 }
 
-export default function PipelineDiagram({ cycleData }) {
+export default function PipelineDiagram({ cycleData, numberFormat = 'dec' }) {
   if (!cycleData) {
     return (
       <div className="pipeline-diagram pipeline-empty">
@@ -73,7 +75,7 @@ export default function PipelineDiagram({ cycleData }) {
       <div className="pipeline-diagram">
         {STAGE_KEYS.map((key, i) => (
           <div key={key} className="stage-wrapper">
-            <StageBox label={STAGE_LABELS[i]} stage={cycleData[key]} />
+            <StageBox label={STAGE_LABELS[i]} stage={cycleData[key]} numberFormat={numberFormat} />
             {i < STAGE_KEYS.length - 1 && (
               <div className="stage-arrow">▶</div>
             )}
