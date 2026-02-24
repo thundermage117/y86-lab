@@ -1,4 +1,4 @@
-`include"fetch.v"
+`include"../src/fetch.v"
 `timescale 1ns / 1ns 
 module testbench;
 	//reg[27:0]Instruction_Stream='h0102013;//0000000100000010000000010101

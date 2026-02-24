@@ -1,8 +1,8 @@
-`include "Registers.v"
+`include "registers.v"
 `include "fetch.v"
 `include "decode.v"
 `include "execute.v"
-`include "Memory.v"
+`include "memory.v"
 `include "pc_update.v"
 
 module proc();
@@ -149,7 +149,7 @@ preg #(4) W_dstM_reg(W_dstM, M_dstM, W_stall, W_bubble, 4'hF, clock);
 
 initial begin
 	//$monitor ($time,"ns:  clock=%b, PC=%h, icode=%h, ifun=%h, valP=%h\n",clock,PC,icode,ifun,valP); 
-	$dumpfile("proc.vcd");
+	$dumpfile("sim/proc.vcd");
     	$dumpvars(0,f_icode,D_icode,E_icode,M_icode,W_icode, clock, rax, 
 rcx, rdx, rbx, rsp, rbp, rsi, rdi,r8, r9, r10, r11, r12, r13, r14);
 	//valE='h2A382812;

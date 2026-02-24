@@ -1,4 +1,4 @@
-`include "execute.v"
+`include "../src/execute.v"
 
 module tb();
 

@@ -1,8 +1,8 @@
-`include "fetch.v"
-`include "decode.v"
-`include "execute.v"
-`include "Memory.v"
-`include "pc_update.v"
+`include "../src/fetch.v"
+`include "../src/decode.v"
+`include "../src/execute.v"
+`include "../src/memory.v"
+`include "../src/pc_update.v"
 
 module seq();
 
@@ -36,7 +36,7 @@ integer j;
 
 initial begin
 	//$monitor ($time,"ns:  clock=%b, PC=%h, icode=%h, ifun=%h, valP=%h\n",clock,PC,icode,ifun,valP); 
-	$dumpfile("Seq.vcd");
+	$dumpfile("sim/seq.vcd");
     	$dumpvars(0,PC,icode,ifun,rA,rB,valC,valP,valA,valB,valM,valE,instr_valid,Cnd,clock,PC_in,stat,imem_error);
 	clock=0;
 	//valE='h2A382812;

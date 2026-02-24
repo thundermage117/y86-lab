@@ -1,4 +1,4 @@
-`include"Register.v"
+`include"../src/register.v"
 `timescale 1ns / 1ns 
 module testbench;
 reg [3:0] icode;
