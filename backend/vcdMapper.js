@@ -32,6 +32,7 @@ const SIGNALS_OF_INTEREST = new Set([
   'f_ifun', 'D_ifun', 'E_ifun', 'M_ifun',
   'f_stat', 'D_stat', 'E_stat', 'M_stat', 'W_stat', 'm_stat',
   'f_pc', 'f_predPC', 'F_predPC', 'D_pc', 'E_pc', 'M_pc', 'W_pc',
+  'd_srcA', 'd_srcB', 'E_dstM', 'e_dstE', 'M_dstE', 'M_dstM', 'W_dstE', 'W_dstM',
   'cc', 'new_cc', 'set_cc', 'e_Cnd', 'M_Cnd',
   'instr_valid', 'imem_error',
   'F_stall', 'F_bubble', 'D_stall', 'D_bubble', 'E_stall', 'E_bubble', 'M_stall', 'M_bubble', 'W_stall', 'W_bubble',
@@ -176,6 +177,21 @@ function buildSnapshot(current, symbolToName) {
     };
   }
 
+  function fmtRegId(val) {
+    if (val === null) {
+      return { raw: null, hex: 'x', name: 'x', label: 'x', isNone: null };
+    }
+    const isNone = val === 0xF;
+    const name = isNone ? 'RNONE' : (REG_NAMES[val] ?? `r?${val.toString(16).toUpperCase()}`);
+    return {
+      raw: val,
+      hex: fmtSmallHex(val),
+      name,
+      label: isNone ? 'RNONE' : `%${name}`,
+      isNone,
+    };
+  }
+
   function fmtBoolean(name) {
     const val = getVal(name);
     if (val === null) return null;
@@ -252,6 +268,24 @@ function buildSnapshot(current, symbolToName) {
       predPC: fmtHex(getVal('f_predPC')),
       fetchRegPredPC: fmtHex(getVal('F_predPC')),
       memory_stat: fmtStat(getVal('m_stat')),
+    },
+    forwarding: {
+      decode: {
+        srcA: fmtRegId(getVal('d_srcA')),
+        srcB: fmtRegId(getVal('d_srcB')),
+      },
+      execute: {
+        dstE: fmtRegId(getVal('e_dstE')),
+        dstM: fmtRegId(getVal('E_dstM')),
+      },
+      memory: {
+        dstE: fmtRegId(getVal('M_dstE')),
+        dstM: fmtRegId(getVal('M_dstM')),
+      },
+      writeback: {
+        dstE: fmtRegId(getVal('W_dstE')),
+        dstM: fmtRegId(getVal('W_dstM')),
+      },
     },
   };
 }

@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import PipelineDiagram from './components/PipelineDiagram';
+import PipelineTimeline from './components/PipelineTimeline';
 import RegisterFile from './components/RegisterFile';
 import InstructionMemoryViewer from './components/InstructionMemoryViewer';
 import { formatNumericString, formatOpcodeValue } from './utils/numberFormat';
@@ -32,6 +33,12 @@ function formatPercentPrecise(value) {
 function formatCpi(totalCycles, retiredInstructions) {
   if (!retiredInstructions) return '--';
   return (totalCycles / retiredInstructions).toFixed(2);
+}
+
+function shortPcHex(pcHex) {
+  if (!pcHex || pcHex === 'x') return 'x';
+  if (pcHex.length <= 10) return pcHex;
+  return `0x${pcHex.slice(-6)}`;
 }
 
 function computePerformanceMetrics(cycles) {
@@ -209,6 +216,7 @@ export default function App() {
   const formatRegisterValue = (value) => formatNumericString(value, numberFormat, { signed: true, bitWidth: 64 });
   const formatAddressValue = (value) => formatNumericString(value, numberFormat);
   const formatSmallValue = (value) => formatNumericString(value, numberFormat);
+  const formatStagePcValue = (value) => (numberFormat === 'hex' ? shortPcHex(value) : formatAddressValue(value));
 
   // Auto-play logic
   useEffect(() => {
@@ -389,13 +397,52 @@ export default function App() {
           <section className="section" id="pipeline-stages">
             <h2 className="section-title">Pipeline Stages</h2>
             <PipelineDiagram cycleData={currentCycle} numberFormat={numberFormat} control={control} />
+            <PipelineTimeline cycles={cycles} currentCycleIndex={cycleIdx} />
           </section>
 
-          <RegisterFile
-            registers={currentCycle?.registers ?? null}
-            changedRegisters={new Set(changedRegisters.map((entry) => entry.name))}
-            numberFormat={numberFormat}
-          />
+          <div className="register-sidebar-column">
+            <RegisterFile
+              registers={currentCycle?.registers ?? null}
+              changedRegisters={new Set(changedRegisters.map((entry) => entry.name))}
+              numberFormat={numberFormat}
+            />
+
+            {hasData && (
+              <section className="register-file performance-panel" id="performance-metrics">
+                <h2 className="section-title">Performance Metrics</h2>
+                <div className="sidebar-metric-list performance-panel-body">
+                  <div className="sidebar-metric">
+                    <MetricTooltip
+                      label="Total CPI"
+                      description="Total CPI = total captured cycles / retired instructions. Retired instructions are counted from non-NOP instructions observed in the writeback stage."
+                    />
+                    <strong>{formatCpi(total, performanceMetrics.retiredInstructions)}</strong>
+                  </div>
+                  <div className="sidebar-metric">
+                    <MetricTooltip
+                      label="Branch mispredict penalty"
+                      description="Estimated penalty % = (2 penalty cycles per mispredicted JXX branch / total captured cycles) × 100. A misprediction is counted when execute has JXX and e_Cnd = 0."
+                    />
+                    <strong>{formatPercentPrecise(performanceMetrics.branchPenaltyPercent)}</strong>
+                  </div>
+                  <div className="sidebar-metric">
+                    <MetricTooltip
+                      label="Data hazard stall cycles"
+                      description="Counts cycles matching the data-hazard stall pattern: F_stall=1, D_stall=1, and E_bubble=1, excluding branch-mispredict cycles."
+                    />
+                    <strong>{performanceMetrics.dataHazardStallCycles}</strong>
+                  </div>
+                  <div className="sidebar-metric">
+                    <MetricTooltip
+                      label="Retired instructions"
+                      description="Number of non-NOP instructions observed in the writeback stage across all captured cycles."
+                    />
+                    <strong>{performanceMetrics.retiredInstructions}</strong>
+                  </div>
+                </div>
+              </section>
+            )}
+          </div>
         </div>
 
         {currentCycle ? (
@@ -528,7 +575,7 @@ export default function App() {
                                 <span className="stage-detail-icode">{stage.icodeName}</span>
                                 <span className="stage-detail-hex"> {icodeDisplay}</span>
                               </td>
-                              <td className="mono-cell">{formatAddressValue(stage.pcHex)}</td>
+                              <td className="mono-cell">{formatStagePcValue(stage.pcHex)}</td>
                               <td className="mono-cell">{formatSmallValue(stage.ifunHex)}</td>
                               <td className="mono-cell">{stage.statName}</td>
                               <td className="stage-col-delta">
@@ -559,42 +606,6 @@ export default function App() {
             <p>Then use the slider or play controls to step through execution cycle by cycle.</p>
             <p>Keep <strong>Dec</strong> selected for easier reading, then switch to <strong>Hex</strong> when matching values against hardware traces.</p>
           </section>
-        )}
-
-        {hasData && (
-          <details className="section bottom-panel">
-            <summary className="section-title bottom-panel-summary">Performance Metrics</summary>
-            <div className="sidebar-metric-list bottom-panel-body">
-              <div className="sidebar-metric">
-                <MetricTooltip
-                  label="Total CPI"
-                  description="Total CPI = total captured cycles / retired instructions. Retired instructions are counted from non-NOP instructions observed in the writeback stage."
-                />
-                <strong>{formatCpi(total, performanceMetrics.retiredInstructions)}</strong>
-              </div>
-              <div className="sidebar-metric">
-                <MetricTooltip
-                  label="Branch mispredict penalty"
-                  description="Estimated penalty % = (2 penalty cycles per mispredicted JXX branch / total captured cycles) × 100. A misprediction is counted when execute has JXX and e_Cnd = 0."
-                />
-                <strong>{formatPercentPrecise(performanceMetrics.branchPenaltyPercent)}</strong>
-              </div>
-              <div className="sidebar-metric">
-                <MetricTooltip
-                  label="Data hazard stall cycles"
-                  description="Counts cycles matching the data-hazard stall pattern: F_stall=1, D_stall=1, and E_bubble=1, excluding branch-mispredict cycles."
-                />
-                <strong>{performanceMetrics.dataHazardStallCycles}</strong>
-              </div>
-              <div className="sidebar-metric">
-                <MetricTooltip
-                  label="Retired instructions"
-                  description="Number of non-NOP instructions observed in the writeback stage across all captured cycles."
-                />
-                <strong>{performanceMetrics.retiredInstructions}</strong>
-              </div>
-            </div>
-          </details>
         )}
 
         <details className="section bottom-panel">
