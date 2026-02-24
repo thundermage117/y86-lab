@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import PipelineDiagram from './components/PipelineDiagram';
 import RegisterFile from './components/RegisterFile';
+import InstructionMemoryViewer from './components/InstructionMemoryViewer';
 import { formatNumericString, formatOpcodeValue } from './utils/numberFormat';
 import './App.css';
 
@@ -116,6 +117,7 @@ export default function App() {
   const [playing, setPlaying] = useState(false);
   const [numberFormat, setNumberFormat] = useState('dec');
   const [theme, setTheme] = useState(getInitialTheme);
+  const [instructionMemory, setInstructionMemory] = useState(null);
   const playTimer = useRef(null);
 
   const currentCycle = cycles[cycleIdx] ?? null;
@@ -238,14 +240,17 @@ export default function App() {
     setError(null);
     setPlaying(false);
     setCycleIdx(0);
+    setInstructionMemory(null);
     try {
       const res = await fetch(API_URL);
       if (!res.ok) throw new Error(`Server error: ${res.status}`);
       const data = await res.json();
       if (data.error) throw new Error(data.error);
       setCycles(data.cycles);
+      setInstructionMemory(data.instructionMemory ?? null);
     } catch (err) {
       setError(err.message);
+      setInstructionMemory(null);
     } finally {
       setLoading(false);
     }
@@ -523,6 +528,14 @@ export default function App() {
             <h2 className="section-title">Pipeline Stages</h2>
             <PipelineDiagram cycleData={currentCycle} numberFormat={numberFormat} control={control} />
           </section>
+
+          {hasData && (
+            <InstructionMemoryViewer
+              instructionMemory={instructionMemory}
+              currentCycle={currentCycle}
+              numberFormat={numberFormat}
+            />
+          )}
 
           {currentCycle ? (
             <div className="detail-grid">

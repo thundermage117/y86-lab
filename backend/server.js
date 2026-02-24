@@ -4,6 +4,7 @@ const cors = require('cors');
 const path = require('path');
 const { execSync } = require('child_process');
 const { parseVCD } = require('./vcdMapper');
+const { parseInstructionMemory } = require('./instructionMemory');
 
 const app = express();
 app.use(cors());
@@ -11,6 +12,7 @@ app.use(express.json());
 
 const PIPELINE_DIR = path.join(__dirname, '..', 'hardware', 'pipeline');
 const VCD_PATH = path.join(__dirname, '..', 'hardware', 'pipeline', 'sim', 'proc.vcd');
+const FETCH_V_PATH = path.join(__dirname, '..', 'hardware', 'pipeline', 'src', 'fetch.v');
 
 /**
  * GET /api/simulate
@@ -39,7 +41,13 @@ app.get('/api/simulate', (req, res) => {
   // Parse the VCD
   try {
     const cycles = parseVCD(VCD_PATH);
-    res.json({ cycles, total: cycles.length });
+    let instructionMemory = null;
+    try {
+      instructionMemory = parseInstructionMemory(FETCH_V_PATH);
+    } catch (memErr) {
+      console.warn('Could not parse instruction memory:', memErr.message);
+    }
+    res.json({ cycles, total: cycles.length, instructionMemory });
   } catch (err) {
     console.error('Failed to parse VCD:', err);
     res.status(500).json({ error: 'Failed to parse VCD file: ' + err.message });
