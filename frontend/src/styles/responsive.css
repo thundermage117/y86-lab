@@ -1,0 +1,162 @@
+/* Responsive */
+@media (max-width: 1080px) {
+
+  .pipeline-register-row,
+  .insights-memory-row {
+    grid-template-columns: 1fr;
+  }
+
+  .app-main {
+    gap: 0.85rem;
+  }
+
+  .control-panels {
+    grid-template-columns: 1fr;
+  }
+
+  .metric-tooltip {
+    max-width: calc(100vw - 2rem);
+  }
+
+  .instruction-memory-table-wrap {
+    max-height: 320px;
+  }
+
+  .forwarding-producer-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 780px) {
+  #root {
+    padding: 0.8rem;
+  }
+
+  .app-header {
+    flex-direction: column;
+    align-items: stretch;
+    padding: 0.85rem;
+    top: 0;
+  }
+
+  .header-controls {
+    justify-content: flex-start;
+  }
+
+  .header-status {
+    justify-content: flex-start;
+  }
+
+  .header-slider,
+  .header-slider-placeholder {
+    max-width: 100%;
+  }
+
+  .cycle-display {
+    margin-left: 0;
+  }
+
+  .change-row {
+    grid-template-columns: 62px 1fr auto;
+  }
+
+  .change-prev {
+    display: none;
+  }
+
+  .reg-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .control-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .format-switch {
+    width: 100%;
+  }
+
+  .format-switch-btn {
+    flex: 1;
+  }
+
+  .pipeline-diagram {
+    padding-inline: 0.25rem;
+  }
+
+  .forwarding-map {
+    padding: 0.55rem;
+  }
+
+  .forwarding-map-svg {
+    min-width: 760px;
+    height: 182px;
+  }
+
+  .forwarding-source-summary-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .timeline-col-label,
+  .timeline-row-label {
+    min-width: 130px;
+    max-width: 130px;
+    width: 130px;
+  }
+
+  .timeline-col-cycle,
+  .timeline-cell,
+  .timeline-cell-empty {
+    min-width: 32px;
+    width: 32px;
+  }
+
+  .timeline-cell {
+    height: 26px;
+  }
+
+  .stage-wrapper {
+    min-width: 170px;
+    flex: 0 0 auto;
+  }
+
+  .stage-arrow {
+    display: none;
+  }
+
+  .meta-row {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .control-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .section-header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .memory-viewer-summary {
+    grid-template-columns: 1fr;
+  }
+
+  .forwarding-source-status {
+    margin-left: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+
+  .btn,
+  .stage-box,
+  .reg-entry,
+  .change-row {
+    transition: none;
+  }
+
+  .app::before {
+    display: none;
+  }
+}

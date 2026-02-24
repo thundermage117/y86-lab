@@ -3,6 +3,8 @@ import PipelineDiagram from './components/PipelineDiagram';
 import PipelineTimeline from './components/PipelineTimeline';
 import RegisterFile from './components/RegisterFile';
 import InstructionMemoryViewer from './components/InstructionMemoryViewer';
+import AppHeaderControls from './components/AppHeaderControls';
+import PerformanceMetricsPanel from './components/PerformanceMetricsPanel';
 import { formatNumericString, formatOpcodeValue } from './utils/numberFormat';
 import './App.css';
 
@@ -19,20 +21,6 @@ function getInitialTheme() {
   if (savedTheme === 'light' || savedTheme === 'dark') return savedTheme;
 
   return window.matchMedia?.('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
-}
-
-function formatPercent(value) {
-  return `${Math.round(value)}%`;
-}
-
-function formatPercentPrecise(value) {
-  if (!Number.isFinite(value)) return '--';
-  return `${value.toFixed(1)}%`;
-}
-
-function formatCpi(totalCycles, retiredInstructions) {
-  if (!retiredInstructions) return '--';
-  return (totalCycles / retiredInstructions).toFixed(2);
 }
 
 function shortPcHex(pcHex) {
@@ -94,26 +82,6 @@ function formatBool(value) {
 function flagStateLabel(value) {
   if (value === null || value === undefined) return 'x';
   return value ? 'set' : 'clear';
-}
-
-function MetricTooltip({ label, description }) {
-  return (
-    <span className="metric-label">
-      <span>{label}</span>
-      <span className="metric-help">
-        <button
-          type="button"
-          className="metric-help-trigger"
-          aria-label={`${label}: measurement details`}
-        >
-          ?
-        </button>
-        <span role="tooltip" className="metric-tooltip">
-          {description}
-        </span>
-      </span>
-    </span>
-  );
 }
 
 export default function App() {
@@ -198,8 +166,6 @@ export default function App() {
     ['new SF', flags.new_sf],
     ['new OF', flags.new_of],
   ] : [];
-
-  const progressPercent = total > 1 ? (cycleIdx / (total - 1)) * 100 : hasData ? 100 : 0;
 
   const runStateLabel = loading
     ? 'Loading simulation'
@@ -306,88 +272,27 @@ export default function App() {
       <header className="app-header">
         <h1 className="app-brand-title">Y86-64 Pipeline Visualizer</h1>
 
-        <div className="header-controls">
-          <button
-            className="btn btn-primary"
-            onClick={loadSimulation}
-            disabled={loading}
-          >
-            {loading ? 'Loading…' : hasData ? 'Reload' : 'Load Simulation'}
-          </button>
-
-          <div className="playback-controls" aria-label="Playback controls">
-            <button className="btn btn-icon" onClick={prev} disabled={!hasData || cycleIdx === 0} title="Previous cycle (Left Arrow)">&#9664;</button>
-            <button className="btn btn-icon btn-icon-primary" onClick={togglePlay} disabled={!hasData} title={playing ? 'Pause (Space)' : 'Play (Space)'}>
-              {playing ? '\u23F8' : '\u25B6'}
-            </button>
-            <button className="btn btn-icon" onClick={next} disabled={!hasData || cycleIdx >= total - 1} title="Next cycle (Right Arrow)">&#9654;</button>
-          </div>
-
-          <div className="cycle-display">
-            {hasData ? (
-              <>Cycle <strong>{cycleIdx + 1}</strong> / {total}</>
-            ) : (
-              'Cycle -- / --'
-            )}
-          </div>
-
-          {hasData ? (
-            <input
-              className="cycle-slider header-slider"
-              type="range"
-              min={0}
-              max={total - 1}
-              value={cycleIdx}
-              onChange={e => {
-                setPlaying(false);
-                setCycleIdx(Number(e.target.value));
-              }}
-              aria-label="Cycle timeline slider"
-            />
-          ) : (
-            <div className="header-slider-placeholder" aria-hidden="true" />
-          )}
-
-          <div className="format-switch" role="group" aria-label="Number format">
-            <button
-              type="button"
-              className={`format-switch-btn${numberFormat === 'dec' ? ' is-active' : ''}`}
-              onClick={() => setNumberFormat('dec')}
-              aria-pressed={numberFormat === 'dec'}
-            >
-              Dec
-            </button>
-            <button
-              type="button"
-              className={`format-switch-btn${numberFormat === 'hex' ? ' is-active' : ''}`}
-              onClick={() => setNumberFormat('hex')}
-              aria-pressed={numberFormat === 'hex'}
-            >
-              Hex
-            </button>
-          </div>
-        </div>
-
-        <div className="header-status">
-          <button
-            type="button"
-            className="theme-toggle-btn"
-            onClick={() => setTheme((prevTheme) => (prevTheme === 'dark' ? 'light' : 'dark'))}
-            aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} theme`}
-            title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} theme`}
-            aria-pressed={theme === 'light'}
-          >
-            <span className="theme-toggle-icon" aria-hidden="true">
-              {theme === 'dark' ? '☾' : '☀'}
-            </span>
-          </button>
-          <div className={`status-pill status-${error ? 'error' : loading ? 'busy' : 'ok'}`}>
-            {runStateLabel}
-          </div>
-          <div className="status-pill status-neutral">
-            {hasData ? `${total} cycles` : 'No data'}
-          </div>
-        </div>
+        <AppHeaderControls
+          loading={loading}
+          hasData={hasData}
+          cycleIdx={cycleIdx}
+          total={total}
+          playing={playing}
+          numberFormat={numberFormat}
+          theme={theme}
+          error={error}
+          runStateLabel={runStateLabel}
+          onLoadSimulation={loadSimulation}
+          onPrev={prev}
+          onNext={next}
+          onTogglePlay={togglePlay}
+          onCycleChange={(nextCycleIdx) => {
+            setPlaying(false);
+            setCycleIdx(nextCycleIdx);
+          }}
+          onNumberFormatChange={setNumberFormat}
+          onThemeToggle={() => setTheme((prevTheme) => (prevTheme === 'dark' ? 'light' : 'dark'))}
+        />
       </header>
 
       <main className="app-main">
@@ -408,39 +313,7 @@ export default function App() {
             />
 
             {hasData && (
-              <section className="register-file performance-panel" id="performance-metrics">
-                <h2 className="section-title">Performance Metrics</h2>
-                <div className="sidebar-metric-list performance-panel-body">
-                  <div className="sidebar-metric">
-                    <MetricTooltip
-                      label="Total CPI"
-                      description="Total CPI = total captured cycles / retired instructions. Retired instructions are counted from non-NOP instructions observed in the writeback stage."
-                    />
-                    <strong>{formatCpi(total, performanceMetrics.retiredInstructions)}</strong>
-                  </div>
-                  <div className="sidebar-metric">
-                    <MetricTooltip
-                      label="Branch mispredict penalty"
-                      description="Estimated penalty % = (2 penalty cycles per mispredicted JXX branch / total captured cycles) × 100. A misprediction is counted when execute has JXX and e_Cnd = 0."
-                    />
-                    <strong>{formatPercentPrecise(performanceMetrics.branchPenaltyPercent)}</strong>
-                  </div>
-                  <div className="sidebar-metric">
-                    <MetricTooltip
-                      label="Data hazard stall cycles"
-                      description="Counts cycles matching the data-hazard stall pattern: F_stall=1, D_stall=1, and E_bubble=1, excluding branch-mispredict cycles."
-                    />
-                    <strong>{performanceMetrics.dataHazardStallCycles}</strong>
-                  </div>
-                  <div className="sidebar-metric">
-                    <MetricTooltip
-                      label="Retired instructions"
-                      description="Number of non-NOP instructions observed in the writeback stage across all captured cycles."
-                    />
-                    <strong>{performanceMetrics.retiredInstructions}</strong>
-                  </div>
-                </div>
-              </section>
+              <PerformanceMetricsPanel totalCycles={total} metrics={performanceMetrics} />
             )}
           </div>
         </div>
