@@ -1,14 +1,17 @@
 export default function AppHeaderControls({
   loading,
   hasData,
+  hasAnyData,
   cycleIdx,
   total,
   playing,
   numberFormat,
   theme,
   error,
+  executionMode,
   runStateLabel,
   onLoadSimulation,
+  onExecutionModeChange,
   onPrev,
   onNext,
   onTogglePlay,
@@ -24,8 +27,27 @@ export default function AppHeaderControls({
           onClick={onLoadSimulation}
           disabled={loading}
         >
-          {loading ? 'Loading…' : hasData ? 'Reload' : 'Load Simulation'}
+          {loading ? 'Loading…' : (hasAnyData || hasData) ? 'Reload' : 'Load Simulation'}
         </button>
+
+        <div className="format-switch" role="group" aria-label="Processor mode">
+          <button
+            type="button"
+            className={`format-switch-btn${executionMode === 'pipelined' ? ' is-active' : ''}`}
+            onClick={() => onExecutionModeChange('pipelined')}
+            aria-pressed={executionMode === 'pipelined'}
+          >
+            Pipeline
+          </button>
+          <button
+            type="button"
+            className={`format-switch-btn${executionMode === 'sequential' ? ' is-active' : ''}`}
+            onClick={() => onExecutionModeChange('sequential')}
+            aria-pressed={executionMode === 'sequential'}
+          >
+            Sequential
+          </button>
+        </div>
 
         <div className="playback-controls" aria-label="Playback controls">
           <button className="btn btn-icon" onClick={onPrev} disabled={!hasData || cycleIdx === 0} title="Previous cycle (Left Arrow)">&#9664;</button>
@@ -94,10 +116,12 @@ export default function AppHeaderControls({
           {runStateLabel}
         </div>
         <div className="status-pill status-neutral">
+          {executionMode === 'sequential' ? 'Sequential CPU' : 'Pipelined CPU'}
+        </div>
+        <div className="status-pill status-neutral">
           {hasData ? `${total} cycles` : 'No data'}
         </div>
       </div>
     </>
   );
 }
-

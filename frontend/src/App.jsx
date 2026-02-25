@@ -1,9 +1,11 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import PipelineDiagram from './components/PipelineDiagram';
 import PipelineTimeline from './components/PipelineTimeline';
 import RegisterFile from './components/RegisterFile';
 import InstructionMemoryViewer from './components/InstructionMemoryViewer';
 import DataMemoryViewer from './components/DataMemoryViewer';
+import SequentialExecutionPanel from './components/SequentialExecutionPanel';
+import SequentialCycleInsights from './components/SequentialCycleInsights';
 import AppHeaderControls from './components/AppHeaderControls';
 import PerformanceMetricsPanel from './components/PerformanceMetricsPanel';
 import { formatNumericString, formatOpcodeValue } from './utils/numberFormat';
@@ -14,6 +16,34 @@ const PLAY_INTERVAL_MS = 200;
 const ZERO_REG = '0x0000000000000000';
 const STAGE_KEYS = ['fetch', 'decode', 'execute', 'memory', 'writeback'];
 const THEME_STORAGE_KEY = 'y86-pipeline-theme';
+const COMPARISON_FOCUS_PIPELINED = 'pipelined';
+const COMPARISON_FOCUS_SEQUENTIAL = 'sequential';
+
+function emptySimulationMode(mode) {
+  return {
+    mode,
+    cycles: [],
+    total: 0,
+    instructionMemory: null,
+    dataMemory: null,
+    clock: null,
+  };
+}
+
+function normalizeSimulationModePayload(mode, payload) {
+  if (!payload || !Array.isArray(payload.cycles)) {
+    return emptySimulationMode(mode);
+  }
+
+  return {
+    mode,
+    cycles: payload.cycles,
+    total: typeof payload.total === 'number' ? payload.total : payload.cycles.length,
+    instructionMemory: payload.instructionMemory ?? null,
+    dataMemory: payload.dataMemory ?? null,
+    clock: payload.clock ?? null,
+  };
+}
 
 function getInitialTheme() {
   if (typeof window === 'undefined') return 'dark';
@@ -36,6 +66,7 @@ function computePerformanceMetrics(cycles) {
       retiredInstructions: 0,
       mispredictions: 0,
       dataHazardStallCycles: 0,
+      bubbleInsertions: 0,
       branchPenaltyCycles: 0,
       branchPenaltyPercent: 0,
     };
@@ -44,6 +75,7 @@ function computePerformanceMetrics(cycles) {
   let retiredInstructions = 0;
   let mispredictions = 0;
   let dataHazardStallCycles = 0;
+  let bubbleInsertions = 0;
 
   for (const cycle of cycles) {
     const writebackIcode = cycle?.writeback?.icode_name;
@@ -57,6 +89,11 @@ function computePerformanceMetrics(cycles) {
     }
 
     const control = cycle?.control;
+    bubbleInsertions += Number(Boolean(control?.D_bubble));
+    bubbleInsertions += Number(Boolean(control?.E_bubble));
+    bubbleInsertions += Number(Boolean(control?.M_bubble));
+    bubbleInsertions += Number(Boolean(control?.W_bubble));
+
     const isDataHazardStall = Boolean(control?.F_stall && control?.D_stall && control?.E_bubble) && !isBranchMispredict;
     if (isDataHazardStall) {
       dataHazardStallCycles += 1;
@@ -70,6 +107,7 @@ function computePerformanceMetrics(cycles) {
     retiredInstructions,
     mispredictions,
     dataHazardStallCycles,
+    bubbleInsertions,
     branchPenaltyCycles,
     branchPenaltyPercent,
   };
@@ -86,25 +124,73 @@ function flagStateLabel(value) {
 }
 
 export default function App() {
-  const [cycles, setCycles] = useState([]);
+  const [simulationModes, setSimulationModes] = useState(() => ({
+    pipelined: emptySimulationMode(COMPARISON_FOCUS_PIPELINED),
+    sequential: emptySimulationMode(COMPARISON_FOCUS_SEQUENTIAL),
+  }));
+  const [executionMode, setExecutionMode] = useState(COMPARISON_FOCUS_PIPELINED);
   const [cycleIdx, setCycleIdx] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [playing, setPlaying] = useState(false);
   const [numberFormat, setNumberFormat] = useState('dec');
   const [theme, setTheme] = useState(getInitialTheme);
-  const [instructionMemory, setInstructionMemory] = useState(null);
-  const [dataMemory, setDataMemory] = useState(null);
   const playTimer = useRef(null);
 
+  const activeSimulation = simulationModes[executionMode] ?? emptySimulationMode(executionMode);
+  const cycles = activeSimulation.cycles ?? [];
+  const instructionMemory = activeSimulation.instructionMemory ?? null;
+  const dataMemory = activeSimulation.dataMemory ?? null;
   const currentCycle = cycles[cycleIdx] ?? null;
   const previousCycle = cycleIdx > 0 ? cycles[cycleIdx - 1] ?? null : null;
   const total = cycles.length;
   const hasData = total > 0;
+  const hasAnyData = Object.values(simulationModes).some((entry) => (entry?.cycles?.length ?? 0) > 0);
   const control = currentCycle?.control ?? null;
   const flags = currentCycle?.flags ?? null;
   const meta = currentCycle?.meta ?? null;
-  const performanceMetrics = computePerformanceMetrics(cycles);
+  const pipelineMetrics = useMemo(
+    () => computePerformanceMetrics(simulationModes.pipelined?.cycles ?? []),
+    [simulationModes],
+  );
+  const sequentialMetrics = useMemo(
+    () => computePerformanceMetrics(simulationModes.sequential?.cycles ?? []),
+    [simulationModes],
+  );
+  const performanceMetrics = executionMode === COMPARISON_FOCUS_SEQUENTIAL ? sequentialMetrics : pipelineMetrics;
+  const comparisonMetrics = useMemo(() => {
+    const pipelinedCycles = simulationModes.pipelined?.cycles?.length ?? 0;
+    const sequentialCycles = simulationModes.sequential?.cycles?.length ?? 0;
+    const pipelinedRetired = pipelineMetrics.retiredInstructions;
+    const sequentialRetired = sequentialMetrics.retiredInstructions;
+    const pipelinedCpi = pipelinedRetired > 0 ? pipelinedCycles / pipelinedRetired : null;
+    const sequentialCpi = sequentialRetired > 0 ? sequentialCycles / sequentialRetired : null;
+
+    return {
+      pipelined: {
+        key: COMPARISON_FOCUS_PIPELINED,
+        label: 'Pipelined CPU',
+        subtitle: '5-stage trace',
+        cyclesTaken: pipelinedCycles,
+        bubblesInserted: pipelineMetrics.bubbleInsertions,
+        cpi: pipelinedCpi,
+        throughputIpc: pipelinedRetired > 0 && pipelinedCycles > 0 ? (pipelinedRetired / pipelinedCycles) : null,
+        cycleTimeTicks: simulationModes.pipelined?.clock?.periodTicks ?? null,
+        cycleTimescale: simulationModes.pipelined?.clock?.timescaleRaw ?? null,
+      },
+      sequential: {
+        key: COMPARISON_FOCUS_SEQUENTIAL,
+        label: 'Sequential CPU',
+        subtitle: 'Sequential trace',
+        cyclesTaken: sequentialCycles,
+        bubblesInserted: sequentialMetrics.bubbleInsertions,
+        cpi: sequentialCpi,
+        throughputIpc: sequentialRetired > 0 && sequentialCycles > 0 ? (sequentialRetired / sequentialCycles) : null,
+        cycleTimeTicks: simulationModes.sequential?.clock?.periodTicks ?? null,
+        cycleTimescale: simulationModes.sequential?.clock?.timescaleRaw ?? null,
+      },
+    };
+  }, [simulationModes, pipelineMetrics, sequentialMetrics]);
 
   const changedRegisters = currentCycle && previousCycle
     ? Object.entries(currentCycle.registers ?? {})
@@ -202,29 +288,60 @@ export default function App() {
     return () => clearInterval(playTimer.current);
   }, [playing, total]);
 
+  useEffect(() => {
+    setCycleIdx((prevIdx) => {
+      if (total <= 0) return 0;
+      return Math.min(prevIdx, total - 1);
+    });
+    if (total <= 0) setPlaying(false);
+  }, [executionMode, total]);
+
   const loadSimulation = useCallback(async () => {
     setLoading(true);
     setError(null);
     setPlaying(false);
     setCycleIdx(0);
-    setInstructionMemory(null);
-    setDataMemory(null);
+    setSimulationModes({
+      pipelined: emptySimulationMode(COMPARISON_FOCUS_PIPELINED),
+      sequential: emptySimulationMode(COMPARISON_FOCUS_SEQUENTIAL),
+    });
     try {
       const res = await fetch(API_URL);
       if (!res.ok) throw new Error(`Server error: ${res.status}`);
       const data = await res.json();
       if (data.error) throw new Error(data.error);
-      setCycles(data.cycles);
-      setInstructionMemory(data.instructionMemory ?? null);
-      setDataMemory(data.dataMemory ?? null);
+      const pipelineMode = normalizeSimulationModePayload(
+        COMPARISON_FOCUS_PIPELINED,
+        data.modes?.pipelined ?? {
+          cycles: data.cycles ?? [],
+          total: data.total,
+          instructionMemory: data.instructionMemory,
+          dataMemory: data.dataMemory,
+        },
+      );
+      const sequentialMode = normalizeSimulationModePayload(
+        COMPARISON_FOCUS_SEQUENTIAL,
+        data.modes?.sequential,
+      );
+
+      setSimulationModes({
+        pipelined: pipelineMode,
+        sequential: sequentialMode,
+      });
+
+      if ((executionMode === COMPARISON_FOCUS_SEQUENTIAL) && sequentialMode.cycles.length === 0 && pipelineMode.cycles.length > 0) {
+        setExecutionMode(COMPARISON_FOCUS_PIPELINED);
+      }
     } catch (err) {
       setError(err.message);
-      setInstructionMemory(null);
-      setDataMemory(null);
+      setSimulationModes({
+        pipelined: emptySimulationMode(COMPARISON_FOCUS_PIPELINED),
+        sequential: emptySimulationMode(COMPARISON_FOCUS_SEQUENTIAL),
+      });
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [executionMode]);
 
   const prev = useCallback(() => setCycleIdx(i => Math.max(0, i - 1)), []);
   const next = useCallback(() => setCycleIdx(i => Math.min(total - 1, i + 1)), [total]);
@@ -275,19 +392,25 @@ export default function App() {
   return (
     <div className="app">
       <header className="app-header">
-        <h1 className="app-brand-title">Y86-64 Pipeline Visualizer</h1>
+        <h1 className="app-brand-title">Y86-64 CPU Visualizer</h1>
 
         <AppHeaderControls
           loading={loading}
           hasData={hasData}
+          hasAnyData={hasAnyData}
           cycleIdx={cycleIdx}
           total={total}
           playing={playing}
           numberFormat={numberFormat}
           theme={theme}
           error={error}
+          executionMode={executionMode}
           runStateLabel={runStateLabel}
           onLoadSimulation={loadSimulation}
+          onExecutionModeChange={(nextMode) => {
+            setPlaying(false);
+            setExecutionMode(nextMode);
+          }}
           onPrev={prev}
           onNext={next}
           onTogglePlay={togglePlay}
@@ -305,9 +428,22 @@ export default function App() {
 
         <div className="pipeline-register-row">
           <section className="section" id="pipeline-stages">
-            <h2 className="section-title">Pipeline Stages</h2>
-            <PipelineDiagram cycleData={currentCycle} numberFormat={numberFormat} control={control} />
-            <PipelineTimeline cycles={cycles} currentCycleIndex={cycleIdx} />
+            <h2 className="section-title">
+              {executionMode === COMPARISON_FOCUS_SEQUENTIAL ? 'Sequential Execution' : 'Pipeline Stages'}
+            </h2>
+            {executionMode === COMPARISON_FOCUS_SEQUENTIAL ? (
+              <SequentialExecutionPanel
+                currentCycle={currentCycle}
+                cycles={cycles}
+                cycleIdx={cycleIdx}
+                numberFormat={numberFormat}
+              />
+            ) : (
+              <>
+                <PipelineDiagram cycleData={currentCycle} numberFormat={numberFormat} control={control} />
+                <PipelineTimeline cycles={cycles} currentCycleIndex={cycleIdx} />
+              </>
+            )}
           </section>
 
           <div className="register-sidebar-column">
@@ -318,7 +454,12 @@ export default function App() {
             />
 
             {hasData && (
-              <PerformanceMetricsPanel totalCycles={total} metrics={performanceMetrics} />
+              <PerformanceMetricsPanel
+                totalCycles={total}
+                metrics={performanceMetrics}
+                comparisonMetrics={comparisonMetrics}
+                selectedMode={executionMode}
+              />
             )}
           </div>
         </div>
@@ -327,6 +468,15 @@ export default function App() {
           <div className="insights-memory-row">
             <section className="section cycle-details" id="cycle-insights">
               <h2 className="section-title">Cycle Insights</h2>
+              {executionMode === COMPARISON_FOCUS_SEQUENTIAL ? (
+                <SequentialCycleInsights
+                  currentCycle={currentCycle}
+                  previousCycle={previousCycle}
+                  cycleIdx={cycleIdx}
+                  numberFormat={numberFormat}
+                />
+              ) : (
+                <>
 
               <div className="insight-block">
                 <div className="insight-heading">Control &amp; Flags</div>
@@ -469,6 +619,8 @@ export default function App() {
                   </div>
                 </div>
               </details>
+                </>
+              )}
             </section>
 
             <div className="memory-viewer-column">
@@ -489,8 +641,8 @@ export default function App() {
         ) : (
           <section className="section empty-state" id="cycle-summary">
             <h2 className="section-title">Getting Started</h2>
-            <p>Click <strong>Load Simulation</strong> in the toolbar above to fetch parsed pipeline cycles from the backend.</p>
-            <p>Then use the slider or play controls to step through execution cycle by cycle.</p>
+            <p>Click <strong>Load Simulation</strong> in the toolbar above to fetch both pipeline and sequential traces from the backend.</p>
+            <p>Use the <strong>Pipeline / Sequential</strong> switch at the top to choose which processor drives the page, then step cycle by cycle.</p>
             <p>Keep <strong>Dec</strong> selected for easier reading, then switch to <strong>Hex</strong> when matching values against hardware traces.</p>
           </section>
         )}
@@ -498,11 +650,12 @@ export default function App() {
         <details className="section bottom-panel">
           <summary className="section-title bottom-panel-summary">How To Read This</summary>
           <div className="sidebar-copy bottom-panel-body">
-            <p><strong>1.</strong> Start with <em>Pipeline Stages</em> to see which instruction sits in each stage.</p>
-            <p><strong>2.</strong> Check <em>Cycle Insights</em> for hazard signals, condition codes, and register changes.</p>
-            <p><strong>3.</strong> Use <em>Register File</em> to see all current register values.</p>
-            <p><strong>4.</strong> Use <em>Instruction Memory Viewer</em> to track which bytes are being fetched.</p>
-            <p><strong>5.</strong> Use <em>Data Memory Hex Viewer</em> to inspect memory-stage reads/writes and the reconstructed data-memory snapshot.</p>
+            <p><strong>1.</strong> Use the top <em>Pipeline / Sequential</em> switch to choose the processor view.</p>
+            <p><strong>2.</strong> Start with the main execution panel to inspect the selected mode's current cycle.</p>
+            <p><strong>3.</strong> Check <em>Cycle Insights</em> for control/datapath signals and cycle-to-cycle changes.</p>
+            <p><strong>4.</strong> Use <em>Register File</em> to see current register values (sequential mode depends on VCD dump visibility).</p>
+            <p><strong>5.</strong> Use <em>Instruction Memory Viewer</em> to track which bytes are being fetched.</p>
+            <p><strong>6.</strong> Use <em>Data Memory Hex Viewer</em> to inspect memory reads/writes and the reconstructed snapshot.</p>
             <p className="sidebar-note">Decimal is the default format for readability. Switch to Hex when comparing with hardware traces.</p>
             <p className="sidebar-note"><strong>Keyboard shortcuts:</strong> <kbd>Space</kbd> Play/Pause &nbsp; <kbd>←</kbd>/<kbd>→</kbd> Step &nbsp; <kbd>Home</kbd>/<kbd>End</kbd> Jump</p>
           </div>

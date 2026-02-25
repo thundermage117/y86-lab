@@ -317,6 +317,114 @@ body {
   margin-top: 0.8rem;
 }
 
+.performance-panel-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+}
+
+.performance-panel-header-row .section-title {
+  margin-bottom: 0;
+}
+
+.performance-focus-switch {
+  flex-shrink: 0;
+}
+
+.performance-compare-grid {
+  margin-top: 0.8rem;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.55rem;
+}
+
+.performance-compare-card {
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.025), rgba(255, 255, 255, 0.01));
+  color: inherit;
+  padding: 0.65rem;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 120ms ease, transform 120ms ease, background-color 120ms ease;
+}
+
+.performance-compare-card:hover {
+  border-color: rgba(39, 177, 255, 0.28);
+  transform: translateY(-1px);
+}
+
+.performance-compare-card:disabled {
+  opacity: 1;
+  cursor: default;
+}
+
+.performance-compare-card:disabled:hover {
+  transform: none;
+}
+
+.performance-compare-card.is-active {
+  border-color: rgba(39, 177, 255, 0.45);
+  background: linear-gradient(180deg, rgba(39, 177, 255, 0.11), rgba(255, 255, 255, 0.015));
+  box-shadow: 0 0 0 1px rgba(39, 177, 255, 0.12) inset;
+}
+
+.performance-compare-card:focus-visible {
+  outline: none;
+  box-shadow: var(--glow);
+}
+
+.performance-compare-card-head {
+  display: grid;
+  gap: 0.15rem;
+}
+
+.performance-compare-card-title {
+  color: var(--text);
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.performance-compare-card-subtitle {
+  color: var(--muted);
+  font-size: 0.68rem;
+  line-height: 1.25;
+}
+
+.performance-compare-card-metrics {
+  margin-top: 0.55rem;
+  display: grid;
+  gap: 0.3rem;
+}
+
+.performance-compare-stat {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 0.5rem;
+  color: var(--muted);
+  font-size: 0.76rem;
+  font-family: var(--sans);
+}
+
+.performance-compare-stat strong {
+  color: var(--text);
+  font-family: var(--mono);
+  font-size: 0.78rem;
+}
+
+.performance-compare-note {
+  margin-top: 0.55rem;
+  border-radius: 9px;
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.02);
+  padding: 0.5rem 0.55rem;
+  color: var(--muted);
+  font-size: 0.74rem;
+  line-height: 1.35;
+}
+
 /* Row 2: Cycle Insights | Instruction Memory */
 .insights-memory-row {
   display: grid;

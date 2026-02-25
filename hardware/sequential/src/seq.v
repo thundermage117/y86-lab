@@ -38,6 +38,7 @@ initial begin
 	//$monitor ($time,"ns:  clk=%b, PC=%h, icode=%h, ifun=%h, valP=%h\n",clk,PC,icode,ifun,valP); 
 	$dumpfile("sim/seq.vcd");
     	$dumpvars(0,PC,icode,ifun,rA,rB,valC,valP,valA,valB,valM,valE,instr_valid,Cnd,clk,PC_in,stat,imem_error);
+	$dumpvars(0, REGISTER);
 	clk=0;
 	//valE='h2A382812;
 	//#10;

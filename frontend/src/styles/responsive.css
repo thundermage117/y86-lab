@@ -80,6 +80,10 @@
     flex: 1;
   }
 
+  .performance-compare-grid {
+    grid-template-columns: 1fr;
+  }
+
   .pipeline-diagram {
     padding-inline: 0.25rem;
   }
