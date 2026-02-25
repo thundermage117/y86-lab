@@ -3,6 +3,7 @@ import PipelineDiagram from './components/PipelineDiagram';
 import PipelineTimeline from './components/PipelineTimeline';
 import RegisterFile from './components/RegisterFile';
 import InstructionMemoryViewer from './components/InstructionMemoryViewer';
+import DataMemoryViewer from './components/DataMemoryViewer';
 import AppHeaderControls from './components/AppHeaderControls';
 import PerformanceMetricsPanel from './components/PerformanceMetricsPanel';
 import { formatNumericString, formatOpcodeValue } from './utils/numberFormat';
@@ -93,6 +94,7 @@ export default function App() {
   const [numberFormat, setNumberFormat] = useState('dec');
   const [theme, setTheme] = useState(getInitialTheme);
   const [instructionMemory, setInstructionMemory] = useState(null);
+  const [dataMemory, setDataMemory] = useState(null);
   const playTimer = useRef(null);
 
   const currentCycle = cycles[cycleIdx] ?? null;
@@ -206,6 +208,7 @@ export default function App() {
     setPlaying(false);
     setCycleIdx(0);
     setInstructionMemory(null);
+    setDataMemory(null);
     try {
       const res = await fetch(API_URL);
       if (!res.ok) throw new Error(`Server error: ${res.status}`);
@@ -213,9 +216,11 @@ export default function App() {
       if (data.error) throw new Error(data.error);
       setCycles(data.cycles);
       setInstructionMemory(data.instructionMemory ?? null);
+      setDataMemory(data.dataMemory ?? null);
     } catch (err) {
       setError(err.message);
       setInstructionMemory(null);
+      setDataMemory(null);
     } finally {
       setLoading(false);
     }
@@ -466,11 +471,20 @@ export default function App() {
               </details>
             </section>
 
-            <InstructionMemoryViewer
-              instructionMemory={instructionMemory}
-              currentCycle={currentCycle}
-              numberFormat={numberFormat}
-            />
+            <div className="memory-viewer-column">
+              <InstructionMemoryViewer
+                instructionMemory={instructionMemory}
+                currentCycle={currentCycle}
+                numberFormat={numberFormat}
+              />
+              <DataMemoryViewer
+                dataMemory={dataMemory}
+                cycles={cycles}
+                cycleIdx={cycleIdx}
+                currentCycle={currentCycle}
+                numberFormat={numberFormat}
+              />
+            </div>
           </div>
         ) : (
           <section className="section empty-state" id="cycle-summary">
@@ -488,6 +502,7 @@ export default function App() {
             <p><strong>2.</strong> Check <em>Cycle Insights</em> for hazard signals, condition codes, and register changes.</p>
             <p><strong>3.</strong> Use <em>Register File</em> to see all current register values.</p>
             <p><strong>4.</strong> Use <em>Instruction Memory Viewer</em> to track which bytes are being fetched.</p>
+            <p><strong>5.</strong> Use <em>Data Memory Hex Viewer</em> to inspect memory-stage reads/writes and the reconstructed data-memory snapshot.</p>
             <p className="sidebar-note">Decimal is the default format for readability. Switch to Hex when comparing with hardware traces.</p>
             <p className="sidebar-note"><strong>Keyboard shortcuts:</strong> <kbd>Space</kbd> Play/Pause &nbsp; <kbd>←</kbd>/<kbd>→</kbd> Step &nbsp; <kbd>Home</kbd>/<kbd>End</kbd> Jump</p>
           </div>

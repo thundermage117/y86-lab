@@ -32,7 +32,9 @@ const SIGNALS_OF_INTEREST = new Set([
   'f_ifun', 'D_ifun', 'E_ifun', 'M_ifun',
   'f_stat', 'D_stat', 'E_stat', 'M_stat', 'W_stat', 'm_stat',
   'f_pc', 'f_predPC', 'F_predPC', 'D_pc', 'E_pc', 'M_pc', 'W_pc',
+  'M_valE', 'M_valA',
   'd_srcA', 'd_srcB', 'E_dstM', 'e_dstE', 'M_dstE', 'M_dstM', 'W_dstE', 'W_dstM',
+  'mem_addr', 'mem_data', 'mem_read', 'mem_write', 'm_valM',
   'cc', 'new_cc', 'set_cc', 'e_Cnd', 'M_Cnd',
   'instr_valid', 'imem_error',
   'F_stall', 'F_bubble', 'D_stall', 'D_bubble', 'E_stall', 'E_bubble', 'M_stall', 'M_bubble', 'W_stall', 'W_bubble',
@@ -227,6 +229,45 @@ function buildSnapshot(current, symbolToName) {
 
   const ccVal = getVal('cc');
   const newCcVal = getVal('new_cc');
+  const memoryIcode = getVal('M_icode');
+  const mValE = getVal('M_valE');
+  const mValA = getVal('M_valA');
+  const memAddrVal = getVal('mem_addr');
+  const memDataVal = getVal('mem_data');
+  const readDataVal = getVal('m_valM');
+  const memReadSignal = fmtBoolean('mem_read');
+  const memWriteSignal = fmtBoolean('mem_write');
+
+  let derivedRead = null;
+  let derivedWrite = null;
+  let derivedAddr = null;
+  let derivedWriteData = null;
+
+  if (memoryIcode !== null) {
+    if (memoryIcode === 0x4 || memoryIcode === 0x8 || memoryIcode === 0xA) { // RMMOVQ, CALL, PUSHQ
+      derivedWrite = true;
+      derivedRead = false;
+      derivedAddr = mValE;
+      derivedWriteData = mValA;
+    } else if (memoryIcode === 0x5) { // MRMOVQ
+      derivedRead = true;
+      derivedWrite = false;
+      derivedAddr = mValE;
+    } else if (memoryIcode === 0x9 || memoryIcode === 0xB) { // RET, POPQ
+      derivedRead = true;
+      derivedWrite = false;
+      derivedAddr = mValA;
+    } else {
+      derivedRead = false;
+      derivedWrite = false;
+    }
+  }
+
+  const effectiveRead = derivedRead !== null ? derivedRead : memReadSignal;
+  const effectiveWrite = derivedWrite !== null ? derivedWrite : memWriteSignal;
+  const effectiveAddr = derivedAddr !== null ? derivedAddr : memAddrVal;
+  const effectiveWriteData = derivedWriteData !== null ? derivedWriteData : memDataVal;
+  const memAddrInRange = Number.isInteger(effectiveAddr) && effectiveAddr >= 0 && effectiveAddr < 128;
 
   return {
     fetch: makeStage('fetch', 'f_icode', { ifunSignal: 'f_ifun', statSignal: 'f_stat', pcSignal: 'f_pc' }),
@@ -268,6 +309,25 @@ function buildSnapshot(current, symbolToName) {
       predPC: fmtHex(getVal('f_predPC')),
       fetchRegPredPC: fmtHex(getVal('F_predPC')),
       memory_stat: fmtStat(getVal('m_stat')),
+    },
+    dataMemory: {
+      read: effectiveRead,
+      write: effectiveWrite,
+      address: effectiveAddr,
+      address_hex: fmtHex(effectiveAddr),
+      wordIndex: memAddrInRange ? effectiveAddr : null,
+      byteAddress_hex: effectiveAddr === null ? 'x' : fmtHex(effectiveAddr * 8),
+      inRange: memAddrInRange,
+      writeData: effectiveWriteData,
+      writeData_hex: fmtHex(effectiveWriteData),
+      readData: readDataVal,
+      readData_hex: fmtHex(readDataVal),
+      signals: {
+        read: memReadSignal,
+        write: memWriteSignal,
+        address_hex: fmtHex(memAddrVal),
+        writeData_hex: fmtHex(memDataVal),
+      },
     },
     forwarding: {
       decode: {

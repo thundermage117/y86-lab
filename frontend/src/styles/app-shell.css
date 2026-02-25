@@ -325,6 +325,13 @@ body {
   align-items: start;
 }
 
+.memory-viewer-column {
+  display: grid;
+  gap: 1rem;
+  align-content: start;
+  min-width: 0;
+}
+
 /* Bottom collapsible panels */
 .bottom-panel>.bottom-panel-summary {
   list-style: none;

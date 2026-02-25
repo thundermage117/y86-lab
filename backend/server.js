@@ -5,6 +5,7 @@ const path = require('path');
 const { execSync } = require('child_process');
 const { parseVCD } = require('./vcdMapper');
 const { parseInstructionMemory } = require('./instructionMemory');
+const { parseDataMemory } = require('./dataMemory');
 
 const app = express();
 app.use(cors());
@@ -13,6 +14,7 @@ app.use(express.json());
 const PIPELINE_DIR = path.join(__dirname, '..', 'hardware', 'pipeline');
 const VCD_PATH = path.join(__dirname, '..', 'hardware', 'pipeline', 'sim', 'proc.vcd');
 const FETCH_V_PATH = path.join(__dirname, '..', 'hardware', 'pipeline', 'src', 'fetch.v');
+const DATA_MEM_PATH = path.join(__dirname, '..', 'hardware', 'pipeline', 'DATA_MEM.txt');
 
 /**
  * GET /api/simulate
@@ -23,6 +25,14 @@ const FETCH_V_PATH = path.join(__dirname, '..', 'hardware', 'pipeline', 'src', '
  * Response: { cycles: [...], total: N }
  */
 app.get('/api/simulate', (req, res) => {
+  let dataMemory = null;
+  try {
+    // Capture the memory image that the simulation will read at startup.
+    dataMemory = parseDataMemory(DATA_MEM_PATH);
+  } catch (memErr) {
+    console.warn('Could not parse data memory:', memErr.message);
+  }
+
   // Try to regenerate the VCD by running iverilog + vvp
   try {
     execSync('iverilog -I src -o src/proc.vvp src/proc.v && vvp src/proc.vvp', {
@@ -47,7 +57,7 @@ app.get('/api/simulate', (req, res) => {
     } catch (memErr) {
       console.warn('Could not parse instruction memory:', memErr.message);
     }
-    res.json({ cycles, total: cycles.length, instructionMemory });
+    res.json({ cycles, total: cycles.length, instructionMemory, dataMemory });
   } catch (err) {
     console.error('Failed to parse VCD:', err);
     res.status(500).json({ error: 'Failed to parse VCD file: ' + err.message });
