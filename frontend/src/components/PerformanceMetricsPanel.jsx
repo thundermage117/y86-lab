@@ -151,49 +151,58 @@ export default function PerformanceMetricsPanel({
         <h2 className="section-title">Performance Metrics</h2>
       </div>
 
-      <div className="performance-timing-model" aria-label="Estimated hardware timing model">
-        <div className="performance-timing-model-head">
-          <strong>Hardware Timing Model (Estimated)</strong>
-          <button
-            type="button"
-            className="btn btn-icon performance-timing-reset"
-            onClick={() => setStageDelays(DEFAULT_STAGE_DELAYS)}
-            title="Reset stage delays"
-          >
-            Reset
-          </button>
+      <details className="performance-advanced">
+        <summary className="performance-advanced-summary">
+          <span>Hardware Timing Model (Estimated)</span>
+          <span className="performance-advanced-summary-meta">
+            <code>Seq {formatDelayUnits(hardwareTimingModel.sequentialCycleTime)}</code>
+            <code>Pipe {formatDelayUnits(hardwareTimingModel.pipelinedCycleTime)}</code>
+          </span>
+        </summary>
+        <div className="performance-timing-model" aria-label="Estimated hardware timing model">
+          <div className="performance-timing-model-head">
+            <strong>Adjust Stage Delays</strong>
+            <button
+              type="button"
+              className="btn btn-icon performance-timing-reset"
+              onClick={() => setStageDelays(DEFAULT_STAGE_DELAYS)}
+              title="Reset stage delays"
+            >
+              Reset
+            </button>
+          </div>
+          <div className="performance-timing-model-copy">
+            Sequential cycle = sum of stage delays. Pipelined cycle = max stage delay + pipeline register overhead. Units are arbitrary (for example, ps).
+          </div>
+          <div className="performance-timing-grid">
+            {[
+              ['fetch', 'F'],
+              ['decode', 'D'],
+              ['execute', 'E'],
+              ['memory', 'M'],
+              ['writeback', 'W'],
+              ['pipelineRegOverhead', 'Reg OH'],
+            ].map(([key, label]) => (
+              <label key={key} className="performance-timing-field">
+                <span>{label}</span>
+                <input
+                  type="number"
+                  min="0"
+                  step="1"
+                  value={stageDelays[key]}
+                  onChange={(e) => {
+                    const next = e.target.value;
+                    setStageDelays((prev) => ({
+                      ...prev,
+                      [key]: next === '' ? '' : clampNonNegativeNumber(next, prev[key]),
+                    }));
+                  }}
+                />
+              </label>
+            ))}
+          </div>
         </div>
-        <div className="performance-timing-model-copy">
-          Sequential cycle = sum of stage delays. Pipelined cycle = max stage delay + pipeline register overhead. Units are arbitrary (for example, ps).
-        </div>
-        <div className="performance-timing-grid">
-          {[
-            ['fetch', 'F'],
-            ['decode', 'D'],
-            ['execute', 'E'],
-            ['memory', 'M'],
-            ['writeback', 'W'],
-            ['pipelineRegOverhead', 'Reg OH'],
-          ].map(([key, label]) => (
-            <label key={key} className="performance-timing-field">
-              <span>{label}</span>
-              <input
-                type="number"
-                min="0"
-                step="1"
-                value={stageDelays[key]}
-                onChange={(e) => {
-                  const next = e.target.value;
-                  setStageDelays((prev) => ({
-                    ...prev,
-                    [key]: next === '' ? '' : clampNonNegativeNumber(next, prev[key]),
-                  }));
-                }}
-              />
-            </label>
-          ))}
-        </div>
-      </div>
+      </details>
 
       {enrichedComparisonMetrics && (
         <>

@@ -18,6 +18,14 @@ const STAGE_KEYS = ['fetch', 'decode', 'execute', 'memory', 'writeback'];
 const THEME_STORAGE_KEY = 'y86-pipeline-theme';
 const COMPARISON_FOCUS_PIPELINED = 'pipelined';
 const COMPARISON_FOCUS_SEQUENTIAL = 'sequential';
+const PAGE_VIEW_EXECUTION = 'execution';
+const PAGE_VIEW_INSIGHTS = 'insights';
+const PAGE_VIEW_MEMORY = 'memory';
+const PAGE_VIEW_PERFORMANCE = 'performance';
+const PIPELINE_VIEW_DIAGRAM = 'diagram';
+const PIPELINE_VIEW_TIMELINE = 'timeline';
+const MEMORY_VIEW_INSTRUCTION = 'instruction';
+const MEMORY_VIEW_DATA = 'data';
 
 function emptySimulationMode(mode) {
   return {
@@ -135,6 +143,9 @@ export default function App() {
   const [playing, setPlaying] = useState(false);
   const [numberFormat, setNumberFormat] = useState('dec');
   const [theme, setTheme] = useState(getInitialTheme);
+  const [pageView, setPageView] = useState(PAGE_VIEW_EXECUTION);
+  const [pipelineView, setPipelineView] = useState(PIPELINE_VIEW_DIAGRAM);
+  const [memoryView, setMemoryView] = useState(MEMORY_VIEW_INSTRUCTION);
   const playTimer = useRef(null);
 
   const activeSimulation = simulationModes[executionMode] ?? emptySimulationMode(executionMode);
@@ -303,6 +314,9 @@ export default function App() {
     setError(null);
     setPlaying(false);
     setCycleIdx(0);
+    setPageView(PAGE_VIEW_EXECUTION);
+    setPipelineView(PIPELINE_VIEW_DIAGRAM);
+    setMemoryView(MEMORY_VIEW_INSTRUCTION);
     setSimulationModes({
       pipelined: emptySimulationMode(COMPARISON_FOCUS_PIPELINED),
       sequential: emptySimulationMode(COMPARISON_FOCUS_SEQUENTIAL),
@@ -428,34 +442,275 @@ export default function App() {
       <main className="app-main">
         {error && <div className="error-banner">Error: {error}</div>}
 
-        <div className="pipeline-register-row">
-          <section className="section" id="pipeline-stages">
-            <h2 className="section-title">
-              {executionMode === COMPARISON_FOCUS_SEQUENTIAL ? 'Sequential Execution' : 'Pipeline Stages'}
-            </h2>
-            {executionMode === COMPARISON_FOCUS_SEQUENTIAL ? (
-              <SequentialExecutionPanel
-                currentCycle={currentCycle}
-                cycles={cycles}
-                cycleIdx={cycleIdx}
-                numberFormat={numberFormat}
-              />
-            ) : (
-              <>
-                <PipelineDiagram cycleData={currentCycle} numberFormat={numberFormat} control={control} />
-                <PipelineTimeline cycles={cycles} currentCycleIndex={cycleIdx} />
-              </>
+        {currentCycle ? (
+          <>
+            <div className="page-view-tabs" role="tablist" aria-label="Main page sections">
+              {[
+                [PAGE_VIEW_EXECUTION, 'Execution'],
+                [PAGE_VIEW_INSIGHTS, 'Insights'],
+                [PAGE_VIEW_MEMORY, 'Memory'],
+                [PAGE_VIEW_PERFORMANCE, 'Performance'],
+              ].map(([key, label]) => (
+                <button
+                  key={key}
+                  type="button"
+                  role="tab"
+                  aria-selected={pageView === key}
+                  className={`page-view-tab${pageView === key ? ' is-active' : ''}`}
+                  onClick={() => setPageView(key)}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+
+            {pageView === PAGE_VIEW_EXECUTION && (
+              <div className="pipeline-register-row">
+                <section className="section" id="pipeline-stages">
+                  <h2 className="section-title">
+                    {executionMode === COMPARISON_FOCUS_SEQUENTIAL ? 'Sequential Execution' : 'Pipeline Stages'}
+                  </h2>
+                  {executionMode !== COMPARISON_FOCUS_SEQUENTIAL && (
+                    <div className="section-tabbar" role="tablist" aria-label="Pipeline visualization">
+                      {[
+                        [PIPELINE_VIEW_DIAGRAM, 'Diagram'],
+                        [PIPELINE_VIEW_TIMELINE, 'Timeline'],
+                      ].map(([key, label]) => (
+                        <button
+                          key={key}
+                          type="button"
+                          role="tab"
+                          aria-selected={pipelineView === key}
+                          className={`section-tab${pipelineView === key ? ' is-active' : ''}`}
+                          onClick={() => setPipelineView(key)}
+                        >
+                          {label}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+
+                  {executionMode === COMPARISON_FOCUS_SEQUENTIAL ? (
+                    <SequentialExecutionPanel
+                      currentCycle={currentCycle}
+                      cycles={cycles}
+                      cycleIdx={cycleIdx}
+                      numberFormat={numberFormat}
+                    />
+                  ) : pipelineView === PIPELINE_VIEW_TIMELINE ? (
+                    <PipelineTimeline cycles={cycles} currentCycleIndex={cycleIdx} />
+                  ) : (
+                    <PipelineDiagram cycleData={currentCycle} numberFormat={numberFormat} control={control} />
+                  )}
+                </section>
+
+                <div className="register-sidebar-column">
+                  <RegisterFile
+                    registers={currentCycle?.registers ?? null}
+                    changedRegisters={new Set(changedRegisters.map((entry) => entry.name))}
+                    numberFormat={numberFormat}
+                  />
+                </div>
+              </div>
             )}
-          </section>
 
-          <div className="register-sidebar-column">
-            <RegisterFile
-              registers={currentCycle?.registers ?? null}
-              changedRegisters={new Set(changedRegisters.map((entry) => entry.name))}
-              numberFormat={numberFormat}
-            />
+            {pageView === PAGE_VIEW_INSIGHTS && (
+              <section className="section cycle-details" id="cycle-insights">
+                <h2 className="section-title">Cycle Insights</h2>
+                {executionMode === COMPARISON_FOCUS_SEQUENTIAL ? (
+                  <SequentialCycleInsights
+                    currentCycle={currentCycle}
+                    previousCycle={previousCycle}
+                    cycleIdx={cycleIdx}
+                    numberFormat={numberFormat}
+                  />
+                ) : (
+                  <>
+                    <div className="insight-block">
+                      <div className="insight-heading">Control &amp; Flags</div>
+                      <div className="control-panels">
+                        <div className="control-card">
+                          <div className="control-card-title">Hazard / Control Signals</div>
+                          <div className="control-headline">{hazardHeadline}</div>
+                          {activeControlEvents.length > 0 ? (
+                            <div className="chip-list" aria-label="Active control events">
+                              {activeControlEvents.map((event) => (
+                                <span key={event} className="event-chip">{event}</span>
+                              ))}
+                            </div>
+                          ) : (
+                            <div className="empty-note">No stalls, bubbles, or branch redirects are active in this cycle.</div>
+                          )}
+                        </div>
 
-            {hasData && (
+                        <div className="control-card">
+                          <div className="control-card-title">Condition Codes</div>
+                          <div className="flag-row">
+                            <span className="flag-caption">Current CC</span>
+                            <span className="flag-hex">{formatSmallValue(flags?.cc_hex ?? 'x')}</span>
+                          </div>
+                          <div className="flag-grid">
+                            {ccRows.map(([label, value]) => (
+                              <div key={label} className="flag-chip">
+                                <span>{label}</span>
+                                <strong>{flagStateLabel(value)}</strong>
+                              </div>
+                            ))}
+                          </div>
+
+                          <div className="flag-row flag-row-secondary">
+                            <span className="flag-caption">Pending `new_cc`</span>
+                            <span className="flag-hex">{formatSmallValue(flags?.new_cc_hex ?? 'x')}</span>
+                          </div>
+                          <div className="flag-grid">
+                            {newCcRows.map(([label, value]) => (
+                              <div key={label} className="flag-chip">
+                                <span>{label}</span>
+                                <strong>{flagStateLabel(value)}</strong>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="insight-block">
+                      <div className="insight-heading">Register Activity</div>
+                      {changedRegisters.length > 0 ? (
+                        <div className="change-list">
+                          {changedRegisters.map((entry) => (
+                            <div key={entry.name} className="change-row">
+                              <span className="change-reg">%{entry.name}</span>
+                              <span className="change-prev">{formatRegisterValue(entry.prev)}</span>
+                              <span className="change-arrow">→</span>
+                              <span className="change-next">{formatRegisterValue(entry.value)}</span>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="empty-note">
+                          {cycleIdx === 0 ? 'Diffs begin at cycle 2 because cycle 1 has no prior state.' : 'No register value changes detected in this cycle.'}
+                        </div>
+                      )}
+                    </div>
+
+                    <details className="insight-advanced">
+                      <summary className="insight-advanced-summary">Advanced Details</summary>
+                      <div className="insight-advanced-body">
+                        <div className="insight-block">
+                          <div className="insight-heading">Raw Control Bits</div>
+                          <div className="control-grid">
+                            {controlRows.map(([label, value]) => (
+                              <div key={label} className={`control-cell${value === true ? ' control-cell-active' : ''}`}>
+                                <span className="control-cell-label">{label}</span>
+                                <span className="control-cell-value">{formatBool(value)}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+
+                        <div className="insight-block">
+                          <div className="insight-heading">Metadata</div>
+                          <div className="meta-list">
+                            <div className="meta-row">
+                              <span>Fetch `f_predPC`</span>
+                              <code>{formatAddressValue(meta?.predPC ?? 'x')}</code>
+                            </div>
+                            <div className="meta-row">
+                              <span>F reg `F_predPC`</span>
+                              <code>{formatAddressValue(meta?.fetchRegPredPC ?? 'x')}</code>
+                            </div>
+                            <div className="meta-row">
+                              <span>Memory `m_stat`</span>
+                              <code>{meta?.memory_stat?.name ?? 'x'} ({formatSmallValue(meta?.memory_stat?.hex ?? 'x')})</code>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="insight-block">
+                          <div className="insight-heading">Stage Details</div>
+                          <table className="stage-detail-table">
+                            <thead>
+                              <tr>
+                                <th>Stage</th>
+                                <th>Instruction</th>
+                                <th>PC</th>
+                                <th>ifun</th>
+                                <th>stat</th>
+                                <th>Δ</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {stageDetails.map((stage) => {
+                                const icodeDisplay = formatOpcodeValue(stage.icode, numberFormat);
+                                const changed = previousCycle && stage.previousIcodeName !== stage.icodeName;
+                                return (
+                                  <tr key={stage.key} className={changed ? 'stage-row-changed' : ''}>
+                                    <td className="stage-col-label">{stage.label}</td>
+                                    <td>
+                                      <span className="stage-detail-icode">{stage.icodeName}</span>
+                                      <span className="stage-detail-hex"> {icodeDisplay}</span>
+                                    </td>
+                                    <td className="mono-cell">{formatStagePcValue(stage.pcHex)}</td>
+                                    <td className="mono-cell">{formatSmallValue(stage.ifunHex)}</td>
+                                    <td className="mono-cell">{stage.statName}</td>
+                                    <td className="stage-col-delta">
+                                      {previousCycle
+                                        ? (changed ? `← ${stage.previousIcodeName ?? 'x'}` : '—')
+                                        : '—'}
+                                    </td>
+                                  </tr>
+                                );
+                              })}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    </details>
+                  </>
+                )}
+              </section>
+            )}
+
+            {pageView === PAGE_VIEW_MEMORY && (
+              <div className="tabbed-panel-stack">
+                <div className="section-tabbar page-subtabbar" role="tablist" aria-label="Memory viewer">
+                  {[
+                    [MEMORY_VIEW_INSTRUCTION, 'Instruction Memory'],
+                    [MEMORY_VIEW_DATA, 'Data Memory'],
+                  ].map(([key, label]) => (
+                    <button
+                      key={key}
+                      type="button"
+                      role="tab"
+                      aria-selected={memoryView === key}
+                      className={`section-tab${memoryView === key ? ' is-active' : ''}`}
+                      onClick={() => setMemoryView(key)}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+
+                {memoryView === MEMORY_VIEW_INSTRUCTION ? (
+                  <InstructionMemoryViewer
+                    instructionMemory={instructionMemory}
+                    currentCycle={currentCycle}
+                    numberFormat={numberFormat}
+                  />
+                ) : (
+                  <DataMemoryViewer
+                    dataMemory={dataMemory}
+                    cycles={cycles}
+                    cycleIdx={cycleIdx}
+                    currentCycle={currentCycle}
+                    numberFormat={numberFormat}
+                  />
+                )}
+              </div>
+            )}
+
+            {pageView === PAGE_VIEW_PERFORMANCE && hasData && (
               <PerformanceMetricsPanel
                 totalCycles={total}
                 metrics={performanceMetrics}
@@ -463,183 +718,7 @@ export default function App() {
                 selectedMode={executionMode}
               />
             )}
-          </div>
-        </div>
-
-        {currentCycle ? (
-          <div className="insights-memory-row">
-            <section className="section cycle-details" id="cycle-insights">
-              <h2 className="section-title">Cycle Insights</h2>
-              {executionMode === COMPARISON_FOCUS_SEQUENTIAL ? (
-                <SequentialCycleInsights
-                  currentCycle={currentCycle}
-                  previousCycle={previousCycle}
-                  cycleIdx={cycleIdx}
-                  numberFormat={numberFormat}
-                />
-              ) : (
-                <>
-
-              <div className="insight-block">
-                <div className="insight-heading">Control &amp; Flags</div>
-                <div className="control-panels">
-                  <div className="control-card">
-                    <div className="control-card-title">Hazard / Control Signals</div>
-                    <div className="control-headline">{hazardHeadline}</div>
-                    {activeControlEvents.length > 0 ? (
-                      <div className="chip-list" aria-label="Active control events">
-                        {activeControlEvents.map((event) => (
-                          <span key={event} className="event-chip">{event}</span>
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="empty-note">No stalls, bubbles, or branch redirects are active in this cycle.</div>
-                    )}
-                  </div>
-
-                  <div className="control-card">
-                    <div className="control-card-title">Condition Codes</div>
-                    <div className="flag-row">
-                      <span className="flag-caption">Current CC</span>
-                      <span className="flag-hex">{formatSmallValue(flags?.cc_hex ?? 'x')}</span>
-                    </div>
-                    <div className="flag-grid">
-                      {ccRows.map(([label, value]) => (
-                        <div key={label} className="flag-chip">
-                          <span>{label}</span>
-                          <strong>{flagStateLabel(value)}</strong>
-                        </div>
-                      ))}
-                    </div>
-
-                    <div className="flag-row flag-row-secondary">
-                      <span className="flag-caption">Pending `new_cc`</span>
-                      <span className="flag-hex">{formatSmallValue(flags?.new_cc_hex ?? 'x')}</span>
-                    </div>
-                    <div className="flag-grid">
-                      {newCcRows.map(([label, value]) => (
-                        <div key={label} className="flag-chip">
-                          <span>{label}</span>
-                          <strong>{flagStateLabel(value)}</strong>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="insight-block">
-                <div className="insight-heading">Register Activity</div>
-                {changedRegisters.length > 0 ? (
-                  <div className="change-list">
-                    {changedRegisters.map((entry) => (
-                      <div key={entry.name} className="change-row">
-                        <span className="change-reg">%{entry.name}</span>
-                        <span className="change-prev">{formatRegisterValue(entry.prev)}</span>
-                        <span className="change-arrow">→</span>
-                        <span className="change-next">{formatRegisterValue(entry.value)}</span>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="empty-note">
-                    {cycleIdx === 0 ? 'Diffs begin at cycle 2 because cycle 1 has no prior state.' : 'No register value changes detected in this cycle.'}
-                  </div>
-                )}
-              </div>
-
-              <details className="insight-advanced">
-                <summary className="insight-advanced-summary">Advanced Details</summary>
-                <div className="insight-advanced-body">
-                  <div className="insight-block">
-                    <div className="insight-heading">Raw Control Bits</div>
-                    <div className="control-grid">
-                      {controlRows.map(([label, value]) => (
-                        <div key={label} className={`control-cell${value === true ? ' control-cell-active' : ''}`}>
-                          <span className="control-cell-label">{label}</span>
-                          <span className="control-cell-value">{formatBool(value)}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="insight-block">
-                    <div className="insight-heading">Metadata</div>
-                    <div className="meta-list">
-                      <div className="meta-row">
-                        <span>Fetch `f_predPC`</span>
-                        <code>{formatAddressValue(meta?.predPC ?? 'x')}</code>
-                      </div>
-                      <div className="meta-row">
-                        <span>F reg `F_predPC`</span>
-                        <code>{formatAddressValue(meta?.fetchRegPredPC ?? 'x')}</code>
-                      </div>
-                      <div className="meta-row">
-                        <span>Memory `m_stat`</span>
-                        <code>{meta?.memory_stat?.name ?? 'x'} ({formatSmallValue(meta?.memory_stat?.hex ?? 'x')})</code>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="insight-block">
-                    <div className="insight-heading">Stage Details</div>
-                    <table className="stage-detail-table">
-                      <thead>
-                        <tr>
-                          <th>Stage</th>
-                          <th>Instruction</th>
-                          <th>PC</th>
-                          <th>ifun</th>
-                          <th>stat</th>
-                          <th>Δ</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {stageDetails.map((stage) => {
-                          const icodeDisplay = formatOpcodeValue(stage.icode, numberFormat);
-                          const changed = previousCycle && stage.previousIcodeName !== stage.icodeName;
-                          return (
-                            <tr key={stage.key} className={changed ? 'stage-row-changed' : ''}>
-                              <td className="stage-col-label">{stage.label}</td>
-                              <td>
-                                <span className="stage-detail-icode">{stage.icodeName}</span>
-                                <span className="stage-detail-hex"> {icodeDisplay}</span>
-                              </td>
-                              <td className="mono-cell">{formatStagePcValue(stage.pcHex)}</td>
-                              <td className="mono-cell">{formatSmallValue(stage.ifunHex)}</td>
-                              <td className="mono-cell">{stage.statName}</td>
-                              <td className="stage-col-delta">
-                                {previousCycle
-                                  ? (changed ? `← ${stage.previousIcodeName ?? 'x'}` : '—')
-                                  : '—'}
-                              </td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              </details>
-                </>
-              )}
-            </section>
-
-            <div className="memory-viewer-column">
-              <InstructionMemoryViewer
-                instructionMemory={instructionMemory}
-                currentCycle={currentCycle}
-                numberFormat={numberFormat}
-              />
-              <DataMemoryViewer
-                dataMemory={dataMemory}
-                cycles={cycles}
-                cycleIdx={cycleIdx}
-                currentCycle={currentCycle}
-                numberFormat={numberFormat}
-              />
-            </div>
-          </div>
+          </>
         ) : (
           <section className="section empty-state" id="cycle-summary">
             <h2 className="section-title">Getting Started</h2>
