@@ -328,6 +328,75 @@ body {
   margin-bottom: 0;
 }
 
+.performance-timing-model {
+  margin-top: 0.75rem;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0.01));
+  padding: 0.65rem;
+  display: grid;
+  gap: 0.5rem;
+}
+
+.performance-timing-model-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.performance-timing-model-head strong {
+  color: var(--text);
+  font-size: 0.8rem;
+}
+
+.performance-timing-model-copy {
+  color: var(--muted);
+  font-size: 0.72rem;
+  line-height: 1.35;
+}
+
+.performance-timing-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.45rem;
+}
+
+.performance-timing-field {
+  display: grid;
+  gap: 0.22rem;
+  min-width: 0;
+}
+
+.performance-timing-field span {
+  color: var(--muted);
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.performance-timing-field input {
+  width: 100%;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--text);
+  font-family: var(--mono);
+  font-size: 0.76rem;
+  padding: 0.38rem 0.45rem;
+}
+
+.performance-timing-field input:focus-visible {
+  outline: none;
+  box-shadow: var(--glow);
+}
+
+.performance-timing-reset {
+  min-width: 0;
+  padding: 0.42rem 0.65rem;
+  font-size: 0.76rem;
+}
+
 .performance-focus-switch {
   flex-shrink: 0;
 }
