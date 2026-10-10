@@ -20,9 +20,10 @@ export default function LearnView() {
       <Panel title="How to use this" className="howto">
         <ol className="howto-steps">
           <li><strong>Program:</strong> pick an example or write your own Y86-64 assembly, then press <em>Assemble &amp; Run</em>. It runs on two real Verilog CPUs (5-stage PIPE and single-cycle SEQ) in Icarus Verilog.</li>
-          <li><strong>Pipeline:</strong> step cycle by cycle. The five cards show which instruction each stage holds and what it computes. The panel below explains every stall, bubble and forward in plain language; <em>Prev/Next</em> jumps between events.</li>
-          <li><strong>Timeline:</strong> the classic staircase diagram. Click any cell to jump there.</li>
-          <li><strong>Memory:</strong> the program bytes with stage markers, and data memory as the program changes it.</li>
+          <li><strong>Step:</strong> everything about one cycle on one screen. The five cards show what each stage holds and computes; arrows between them show whether each instruction advances, is held, or is replaced by a bubble, and curved arcs show values forwarded into Decode. Below: the cycles around this one, a plain-language explanation (dotted words have definitions), the source, and registers or data memory. Hover an instruction anywhere to highlight it everywhere.</li>
+          <li><strong>Finding events:</strong> colored ticks under the cycle slider mark stalls, mispredictions, ret stalls and exceptions; <em>Prev/Next</em> or <kbd>[</kbd> <kbd>]</kbd> jumps between them.</li>
+          <li><strong>Timeline:</strong> the classic staircase diagram for the whole run. Click any cell to jump there.</li>
+          <li><strong>Editor help:</strong> start typing for completions (instructions, <code>%</code> registers, <code>.</code> directives, labels); hover an instruction or label for its meaning or address.</li>
           <li><strong>Performance:</strong> where the cycles went, and why a pipeline wins despite needing more of them.</li>
           <li>Switch between <em>Pipelined</em> and <em>Sequential</em> in the header to compare the two CPUs on the same program.</li>
         </ol>

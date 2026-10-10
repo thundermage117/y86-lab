@@ -4,19 +4,23 @@ Write Y86-64 assembly in the browser, run it on **two real Verilog CPUs** (a 5-s
 
 > Y86-64 is the teaching ISA from *Computer Systems: A Programmer's Perspective* (Bryant & O'Hallaron). The pipelined CPU implements CS:APP's **PIPE** design, and the sequential CPU implements **SEQ**.
 
-![Pipeline view during a load/use stall](docs/screenshots/pipeline.png)
+![Step view during a load/use stall](docs/screenshots/pipeline.png)
 
 ## Features
 
-- **Write and run your own programs.** A CodeMirror editor with Y86 syntax highlighting and a `yas`-compatible assembler (labels, `.pos`, `.align`, `.quad`, `.byte`). Assembler errors are marked on the line where they occur. Ten example programs are included, each built to demonstrate one concept.
+- **Write and run your own programs.** A CodeMirror editor with Y86 syntax highlighting, autocompletion (instructions, registers, directives, labels) and hover docs for each instruction's semantics and each label's address. It uses a `yas`-compatible assembler (labels, `.pos`, `.align`, `.quad`, `.byte`), and assembler errors are marked on the line where they occur. Ten example programs are included, each built to demonstrate one concept.
 - **Real hardware, not a JS imitation.** Each run assembles your program, loads it into the Verilog CPUs under Icarus Verilog, and maps the resulting waveform back into per-cycle state.
 - **Hazards explained.** For every cycle the visualizer says what is happening and why. The text is generated from the CPU's own control signals (`load_use`, `mispredict`, `ret_hazard`, forwarding selectors). Example:
   > *`mrmovq 0(%rbx), %rax` in Execute is loading %rax, but `addq %rax, %rax` in Decode needs it now… Fetch and Decode hold their instructions for one cycle and a bubble is inserted into Execute.*
 
-  **Prev/Next** (or `[` / `]`) jumps between load/use stalls, mispredictions, ret stalls, forwards and exceptions.
-- **Five stage cards.** Each shows the instruction in that stage, its computed values, and where each forwarded operand came from (`e_valE`, `m_valM`, …).
+  Dotted terms (stall, bubble, forwarding…) show their definition on hover or focus. Colored ticks under the cycle slider mark every stall, misprediction, ret stall and exception, and **Prev/Next** (or `[` / `]`) jumps between them.
+- **One Step workspace.**
+  - The five stage cards show what each stage holds and computes.
+  - Connectors between the cards show whether each instruction advances, is held, or is replaced by a bubble at the next clock edge.
+  - Arcs draw each value forwarded into Decode (`e_valE`, `m_valM`, …), or the blocked load/use path.
+  - Below the cards: a mini-timeline of the surrounding cycles, the explanation, the stage-tagged source, and a Registers / Data memory inspector.
+  - Hovering an instruction highlights it in every view.
 - **Pipeline timeline.** The classic staircase diagram across the whole run. Stalls show as held cells and squashed wrong-path instructions are struck through. Click any cell to jump to that cycle.
-- **Memory.** The program bytes are shown with stage markers. Data memory shows labels, the `%rsp` pointer, and each word's last writer as the program runs.
 - **Performance.** Compare pipelined vs sequential cycle counts, see a CPI breakdown (`1 + load/use + mispredict + ret + fill`) and forwarding statistics, and edit the stage delays in a timing model to see why the pipeline wins despite needing more cycles.
 - **Learn tab.** What each instruction does in each stage (after CS:APP Figs. 4.18–4.21), a glossary, and keyboard shortcuts.
 - **Interface.** Light and dark themes (following the OS by default), keyboard navigation, screen-reader labels, reduced-motion support, and a mobile layout.
