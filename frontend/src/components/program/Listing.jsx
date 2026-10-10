@@ -7,7 +7,9 @@ const hexBytes = (bytes) => bytes.map((b) => b.toString(16).padStart(2, '0')).jo
  * Assembler listing: address | bytes | source. `markers` maps a source line
  * to the pipeline stages currently holding that instruction.
  */
-export default function Listing({ listing, markers, showBytes = true, errorsByLine, follow = false, className = '' }) {
+export default function Listing({
+  listing, markers, showBytes = true, errorsByLine, follow = false, className = '', focusLine = null, onHoverLine,
+}) {
   const container = useRef(null);
   const firstMarked = markers ? Math.min(...[...markers.keys()]) : null;
 
@@ -50,8 +52,11 @@ export default function Listing({ listing, markers, showBytes = true, errorsByLi
                   stages.length ? `is-marked stage-bg-${stages[0]}` : '',
                   error ? 'has-error' : '',
                   isComment ? 'is-comment' : '',
+                  focusLine === item.line ? 'is-focused' : '',
                 ].join(' ')}
                 title={error}
+                onMouseEnter={onHoverLine && stages.length ? () => onHoverLine(item.line) : undefined}
+                onMouseLeave={onHoverLine && stages.length ? () => onHoverLine(null) : undefined}
               >
                 <td className="listing-stages">
                   {stages.map((s) => (

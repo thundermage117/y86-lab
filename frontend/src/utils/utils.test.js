@@ -40,10 +40,7 @@ describe('hazard explanations', () => {
     const cycles = pipe(loadUse).cycles;
     const events = explainPipelineCycle(cycles[4], 'dec');
     const fwd = events.filter((e) => e.kind === 'forward');
-    expect(fwd.map((e) => e.title)).toEqual([
-      'Forward %rax → valA from Memory',
-      'Forward %rax → valB from Memory',
-    ]);
+    expect(fwd.map((e) => e.title)).toEqual(['Forward %rax → valA and valB from Memory']);
     expect(fwd[0].detail).toContain('%rax = 21');
     expect(cycleKinds(cycles[4]).has('forward')).toBe(true);
   });

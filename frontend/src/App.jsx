@@ -2,10 +2,8 @@ import { useCallback, useState } from 'react';
 import AppHeader from './components/AppHeader.jsx';
 import TabBar, { TabPanel } from './components/common/TabBar.jsx';
 import ProgramView from './components/program/ProgramView.jsx';
-import PipelineView from './components/pipeline/PipelineView.jsx';
-import SequentialView from './components/sequential/SequentialView.jsx';
+import StepView from './components/step/StepView.jsx';
 import TimelineView from './components/timeline/TimelineView.jsx';
-import MemoryView from './components/memory/MemoryView.jsx';
 import PerformanceView from './components/performance/PerformanceView.jsx';
 import LearnView from './components/learn/LearnView.jsx';
 import { useSimulation } from './hooks/useSimulation.js';
@@ -80,9 +78,8 @@ export default function App() {
 
   const tabs = [
     { key: 'program', label: 'Program', badge: sim.diagnostics.length || null },
-    { key: 'pipeline', label: mode === 'pipelined' ? 'Pipeline' : 'Datapath' },
+    { key: 'step', label: 'Step' },
     { key: 'timeline', label: 'Timeline' },
-    { key: 'memory', label: 'Memory' },
     { key: 'performance', label: 'Performance' },
     { key: 'learn', label: 'Learn' },
   ];
@@ -117,12 +114,14 @@ export default function App() {
         <TabBar tabs={tabs} active={tab} onChange={setTab} label="Views" idPrefix="view" className="main-tabs" />
 
         <TabPanel idPrefix="view" tabKey={tab} className="view">
-          {tab === 'program' && <ProgramView sim={sim} onRun={run} onOpenPipeline={() => setTab('pipeline')} />}
+          {tab === 'program' && <ProgramView sim={sim} onRun={run} onOpenPipeline={() => setTab('step')} />}
           {tab === 'learn' && <LearnView />}
           {tab !== 'program' && tab !== 'learn' && !hasData && <NeedsRun status={sim.status} />}
-          {hasData && tab === 'pipeline' && (mode === 'pipelined' ? (
-            <PipelineView
+          {hasData && tab === 'step' && (
+            <StepView
               {...view}
+              mode={mode}
+              onSeek={playback.seek}
               nav={{
                 navKinds,
                 onNavKindsChange: setNavKinds,
@@ -130,9 +129,8 @@ export default function App() {
                 onNextHazard: () => jumpHazard(1),
               }}
             />
-          ) : <SequentialView {...view} />)}
+          )}
           {hasData && tab === 'timeline' && <TimelineView {...view} mode={mode} onSeek={playback.seek} />}
-          {hasData && tab === 'memory' && <MemoryView {...view} mode={mode} />}
           {hasData && tab === 'performance' && <PerformanceView result={result} />}
         </TabPanel>
       </main>

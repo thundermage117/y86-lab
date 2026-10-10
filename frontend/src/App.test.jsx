@@ -27,19 +27,24 @@ describe('App', () => {
     await waitFor(() => expect(screen.getByText('Halted OK')).toBeTruthy());
     expect(globalThis.fetch).toHaveBeenCalledWith('/api/simulate', expect.objectContaining({ method: 'POST' }));
 
-    fireEvent.click(screen.getByRole('tab', { name: 'Pipeline' }));
+    fireEvent.click(screen.getByRole('tab', { name: 'Step' }));
     for (let i = 0; i < 3; i += 1) fireEvent.click(screen.getByRole('button', { name: 'Next cycle' }));
     expect(screen.getByText(/Cycle/).textContent).toContain('4');
     expect(screen.getByText('Load/use hazard on %rax')).toBeTruthy();
     const decode = screen.getByRole('article', { name: /Decode stage/ });
     expect(within(decode).getByText('stall')).toBeTruthy();
+    // Connectors: F->D held, D->E bubble at the load/use stall.
+    expect(screen.getAllByText('held').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('bubble', { selector: '.connector-label' })).toHaveLength(1);
+    // Mini-timeline shows the instructions in flight.
+    expect(screen.getByText('Around this cycle')).toBeTruthy();
   });
 
   test('switching to the sequential CPU shows the datapath', async () => {
     render(<App />);
     await waitFor(() => expect(screen.getByText('Halted OK')).toBeTruthy());
     fireEvent.click(screen.getByRole('radio', { name: 'Sequential' }));
-    fireEvent.click(screen.getByRole('tab', { name: 'Datapath' }));
+    fireEvent.click(screen.getByRole('tab', { name: 'Step' }));
     expect(screen.getByText('SEQ datapath')).toBeTruthy();
   });
 

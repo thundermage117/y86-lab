@@ -42,7 +42,7 @@ function stageRows(key, s, fmt, addr, control) {
       if (s.dstE !== 15) rows.push(<Row key="dstE" label="dstE" value={regLabel(s.dstE)} />);
       if (s.dstM !== 15) rows.push(<Row key="dstM" label="dstM" value={regLabel(s.dstM)} />);
       if (control?.loadUse) {
-        rows.push(<Row key="stale" label="note" value="stalled" note="these operands are stale; Decode reads them again next cycle" tone="warn" />);
+        rows.push(<Row key="stale" label="note" value="stale" note="re-read next cycle" tone="warn" />);
       }
       return rows;
     }
@@ -73,7 +73,7 @@ function stageRows(key, s, fmt, addr, control) {
   }
 }
 
-export default function StageCard({ stageKey, stage, control, numberFormat, highlight }) {
+export default function StageCard({ stageKey, stage, control, numberFormat, highlight, focused }) {
   const letter = STAGE_LETTERS[stageKey];
   const stalled = control?.[`${letter}_stall`];
   const bubbleNext = control?.[`${letter}_bubble`];
@@ -83,7 +83,7 @@ export default function StageCard({ stageKey, stage, control, numberFormat, high
 
   return (
     <article
-      className={`stage-card stage-${stageKey}${stage?.bubble ? ' is-bubble' : ''}${highlight ? ' is-highlighted' : ''}`}
+      className={`stage-card stage-${stageKey}${stage?.bubble ? ' is-bubble' : ''}${highlight ? ' is-highlighted' : ''}${focused ? ' is-focused' : ''}`}
       aria-label={`${STAGE_LABELS[stageKey]} stage: ${stage?.bubble ? 'bubble' : stage?.text ?? 'empty'}`}
     >
       <header className="stage-card-header">

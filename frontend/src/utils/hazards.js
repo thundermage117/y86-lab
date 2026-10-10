@@ -17,7 +17,7 @@ export const EVENT_KINDS = Object.freeze({
 });
 
 /** Which pipeline stage produced a forwarded value. */
-const FORWARD_ORIGIN = {
+export const FORWARD_ORIGIN = {
   e_valE: { stage: 'execute', what: 'the ALU result (e_valE)' },
   M_valE: { stage: 'memory', what: 'the ALU result saved in M (M_valE)' },
   m_valM: { stage: 'memory', what: 'the value just read from memory (m_valM)' },
@@ -101,16 +101,23 @@ export function explainPipelineCycle(cycle, numberFormat = 'dec') {
   }
 
   if (live(decode) && !control.loadUse) {
+    // One event per (source, register): `addq %rax, %rax` forwards both operands at once.
+    const groups = new Map();
     for (const [operand, src, fwd, val] of [
       ['valA', decode.srcA, decode.fwdA, decode.valA],
       ['valB', decode.srcB, decode.fwdB, decode.valB],
     ]) {
+      if (!FORWARD_ORIGIN[fwd] || src === RNONE) continue;
+      const key = `${fwd}:${src}`;
+      if (!groups.has(key)) groups.set(key, { fwd, src, val, operands: [] });
+      groups.get(key).operands.push(operand);
+    }
+    for (const { fwd, src, val, operands } of groups.values()) {
       const origin = FORWARD_ORIGIN[fwd];
-      if (!origin || src === RNONE) continue;
       const producer = stages[origin.stage];
       events.push({
         kind: 'forward',
-        title: `Forward ${regLabel(src)} → ${operand} from ${STAGE_LABELS[origin.stage]}`,
+        title: `Forward ${regLabel(src)} → ${operands.join(' and ')} from ${STAGE_LABELS[origin.stage]}`,
         detail: `${code(decode)} needs ${regLabel(src)} = ${fmt(val)}. ${code(producer)} has computed it but not `
           + `written it to the register file yet, so Decode takes ${origin.what} directly. No stall needed.`,
         stages: ['decode', origin.stage],

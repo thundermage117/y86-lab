@@ -104,27 +104,20 @@
   gap: var(--gap);
 }
 
-.pipeline-layout {
+.step-layout {
   display: grid;
   gap: var(--gap);
 }
 
 .stage-strip {
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
-  gap: 12px;
+  grid-template-columns: repeat(4, minmax(0, 1fr) 48px) minmax(0, 1fr);
+  align-items: stretch;
 }
 
-.pipeline-detail {
+.step-detail {
   display: grid;
-  grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr) minmax(0, 0.95fr);
-  gap: var(--gap);
-  align-items: start;
-}
-
-.memory-layout {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr) minmax(0, 1fr);
   gap: var(--gap);
   align-items: start;
 }
@@ -153,10 +146,10 @@
 
 /* ---------- Responsive */
 @media (max-width: 1280px) {
-  .pipeline-detail {
+  .step-detail {
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   }
-  .pipeline-detail .hazard-panel {
+  .step-detail .hazard-panel {
     grid-column: 1 / -1;
   }
 }
@@ -173,9 +166,13 @@
   }
   .stage-strip {
     grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 12px;
+  }
+  .stage-strip .connector,
+  .arc-band {
+    display: none;
   }
   .program-layout,
-  .memory-layout,
   .learn-layout,
   .performance-layout {
     grid-template-columns: minmax(0, 1fr);
@@ -193,7 +190,7 @@
   .app-main {
     padding: 12px 16px 24px;
   }
-  .pipeline-detail {
+  .step-detail {
     grid-template-columns: minmax(0, 1fr);
   }
   .stage-strip {

@@ -1,15 +1,9 @@
-import { useMemo } from 'react';
-import { ICODE, REG_NAMES, STAT } from '@y86/isa.js';
+import { ICODE, STAT } from '@y86/isa.js';
 import Panel from '../common/Panel.jsx';
-import Listing from '../program/Listing.jsx';
-import HazardPanel from '../pipeline/HazardPanel.jsx';
-import RegisterPanel from '../pipeline/RegisterPanel.jsx';
-import RunSummary from '../pipeline/RunSummary.jsx';
-import { explainSequentialCycle } from '../../utils/hazards.js';
 import { formatWord, formatAddr, regLabel } from '../../utils/format.js';
 
 /** SEQ datapath: every stage's values for the single instruction in flight. */
-function Datapath({ c, numberFormat }) {
+export default function SeqDatapath({ c, numberFormat }) {
   const fmt = (v) => formatWord(v, numberFormat);
   const addr = (v) => formatAddr(v, numberFormat === 'hex' ? 'hex' : 'dec');
   const reads = [
@@ -49,39 +43,5 @@ function Datapath({ c, numberFormat }) {
         ))}
       </ol>
     </Panel>
-  );
-}
-
-export default function SequentialView({ result, cycleIndex, numberFormat }) {
-  const mode = result.modes.sequential;
-  const c = mode.cycles[cycleIndex];
-  const previous = cycleIndex > 0 ? mode.cycles[cycleIndex - 1] : null;
-  const events = useMemo(() => explainSequentialCycle(c, numberFormat), [c, numberFormat]);
-  const markers = useMemo(() => new Map(c.line ? [[c.line, ['execute']]] : []), [c]);
-  const pending = new Map();
-  if (c.stat === STAT.AOK) {
-    if (c.dstE !== 15) pending.set(REG_NAMES[c.dstE], c.valE);
-    if (c.dstM !== 15) pending.set(REG_NAMES[c.dstM], c.valM);
-  }
-
-  return (
-    <div className="pipeline-layout">
-      <Datapath c={c} numberFormat={numberFormat} />
-      {cycleIndex === mode.cycles.length - 1 && <RunSummary mode="sequential" modeData={mode} numberFormat={numberFormat} />}
-      <div className="pipeline-detail">
-        <HazardPanel events={events} title="This cycle" />
-        <Panel title="Source" className="source-panel">
-          <Listing listing={result.program.listing} markers={markers} showBytes={false} follow />
-        </Panel>
-        <RegisterPanel
-          registers={c.registers}
-          previous={previous?.registers}
-          pending={pending}
-          cc={c.cc}
-          newCC={c.setCC && c.stat === STAT.AOK ? c.newCC : null}
-          numberFormat={numberFormat}
-        />
-      </div>
-    </div>
   );
 }
