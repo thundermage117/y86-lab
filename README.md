@@ -13,16 +13,17 @@ Write Y86-64 assembly in the browser, run it on **two real Verilog CPUs** (a 5-s
 - **Hazards explained.** For every cycle the visualizer says what is happening and why. The text is generated from the CPU's own control signals (`load_use`, `mispredict`, `ret_hazard`, forwarding selectors). Example:
   > *`mrmovq 0(%rbx), %rax` in Execute is loading %rax, but `addq %rax, %rax` in Decode needs it now… Fetch and Decode hold their instructions for one cycle and a bubble is inserted into Execute.*
 
-  Dotted terms (stall, bubble, forwarding…) show their definition on hover or focus. Colored ticks under the cycle slider mark every stall, misprediction, ret stall and exception, and **Prev/Next** (or `[` / `]`) jumps between them.
+  Dotted terms (stall, bubble, forwarding…) show their definition on hover or focus.
+- **Cycle transport.** On the Step and Timeline tabs a bar under the header holds playback, the cycle slider and speed. Colored ticks on the slider mark every stall, misprediction, ret stall and exception; the event chips beside it choose which kinds are marked, and the event buttons (or `[` / `]`) jump between them.
 - **One Step workspace.**
   - The five stage cards show what each stage holds and computes.
   - Connectors between the cards show whether each instruction advances, is held, or is replaced by a bubble at the next clock edge.
   - Arcs draw each value forwarded into Decode (`e_valE`, `m_valM`, …), or the blocked load/use path.
-  - Below the cards: a mini-timeline of the surrounding cycles, the explanation, the stage-tagged source, and a Registers / Data memory inspector.
+  - Below the cards: a mini-timeline of the surrounding cycles, the explanation (with a run summary at the last cycle), the stage-tagged source, and a Registers / Data memory inspector. Every panel can be collapsed.
   - Hovering an instruction highlights it in every view.
-- **Pipeline timeline.** The classic staircase diagram across the whole run. Stalls show as held cells and squashed wrong-path instructions are struck through. Click any cell to jump to that cycle.
-- **Performance.** Compare pipelined vs sequential cycle counts, see a CPI breakdown (`1 + load/use + mispredict + ret + fill`) and forwarding statistics, and edit the stage delays in a timing model to see why the pipeline wins despite needing more cycles.
-- **Learn tab.** What each instruction does in each stage (after CS:APP Figs. 4.18–4.21), a glossary, and keyboard shortcuts.
+- **Pipeline timeline.** The classic staircase diagram across the whole run, in windows of 16, 32 or 64 cycles or all of them, always scrolled to the instructions in flight. Stalls show as held cells and squashed wrong-path instructions are struck through. Click any cell to jump to that cycle.
+- **Performance.** One pipelined vs sequential comparison (cycles, CPI, clock period, run time and the resulting speedup) with editable stage delays beside it, a breakdown of where the pipelined cycles go and what each cause adds to the CPI (`1 + load/use + mispredict + ret + fill`), and forwarding statistics.
+- **Learn tab.** A getting-started guide, keyboard shortcuts, what each instruction does in each stage (after CS:APP Figs. 4.18–4.21), and a glossary.
 - **Interface.** Light and dark themes (following the OS by default), keyboard navigation, screen-reader labels, reduced-motion support, and a mobile layout.
 
 | Program editor | Timeline (light theme) |
