@@ -1,5 +1,6 @@
 import { ICODE, STAT } from '@y86/isa.js';
 import { STAGE_LABELS, STAGE_LETTERS, formatWord, formatAddr, regLabel } from '../../utils/format.js';
+import Value from '../common/Value.jsx';
 
 const FWD_STAGE = { e_valE: 'execute', M_valE: 'memory', m_valM: 'memory', W_valE: 'writeback', W_valM: 'writeback' };
 
@@ -12,20 +13,20 @@ function Row({ label, value, note, tone }) {
   );
 }
 
-function operandRow(name, src, val, fwd, fmt) {
+function operandRow(name, src, val, fwd, numberFormat) {
   if (src === 15 || src === null) return null;
   const stage = FWD_STAGE[fwd];
   return (
     <Row
       key={name}
       label={`${name} ${regLabel(src)}`}
-      value={fmt(val)}
+      value={<Value hex={val} numberFormat={numberFormat} />}
       note={stage ? <span className={`fwd-chip stage-${stage}`}>← {fwd}</span> : <span className="fwd-chip">regfile</span>}
     />
   );
 }
 
-function stageRows(key, s, fmt, addr, control) {
+function stageRows(key, s, fmt, addr, control, numberFormat) {
   switch (key) {
     case 'fetch':
       return [
@@ -37,8 +38,8 @@ function stageRows(key, s, fmt, addr, control) {
     case 'decode': {
       const rows = [];
       if (s.icode === ICODE.CALL || s.icode === ICODE.JXX) rows.push(<Row key="valA" label="valA" value={addr(s.valP)} note={<span className="fwd-chip">valP</span>} />);
-      else rows.push(operandRow('valA', s.srcA, s.valA, s.fwdA, fmt));
-      rows.push(operandRow('valB', s.srcB, s.valB, s.fwdB, fmt));
+      else rows.push(operandRow('valA', s.srcA, s.valA, s.fwdA, numberFormat));
+      rows.push(operandRow('valB', s.srcB, s.valB, s.fwdB, numberFormat));
       if (s.dstE !== 15) rows.push(<Row key="dstE" label="dstE" value={regLabel(s.dstE)} />);
       if (s.dstM !== 15) rows.push(<Row key="dstM" label="dstM" value={regLabel(s.dstM)} />);
       if (control?.loadUse) {
@@ -47,7 +48,7 @@ function stageRows(key, s, fmt, addr, control) {
       return rows;
     }
     case 'execute': {
-      const rows = [<Row key="valE" label="valE" value={fmt(s.valE)} note="ALU result" />];
+      const rows = [<Row key="valE" label="valE" value={<Value hex={s.valE} numberFormat={numberFormat} />} note="ALU result" />];
       if (s.icode === ICODE.JXX || (s.icode === ICODE.RRMOVQ && s.ifun !== 0)) {
         rows.push(<Row key="cnd" label="Cnd" value={s.Cnd ? 'true' : 'false'} tone={s.Cnd ? 'ok' : 'warn'} />);
       }
@@ -106,7 +107,7 @@ export default function StageCard({ stageKey, stage, control, numberFormat, high
             <code>{stage?.text ?? '—'}</code>
             {stage?.line ? <span className="muted">line {stage.line}</span> : null}
           </div>
-          <dl className="kv-list">{stage ? stageRows(stageKey, stage, fmt, addr, control) : null}</dl>
+          <dl className="kv-list">{stage ? stageRows(stageKey, stage, fmt, addr, control, numberFormat) : null}</dl>
         </>
       )}
     </article>

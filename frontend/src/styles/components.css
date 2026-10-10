@@ -1330,3 +1330,50 @@ select {
     --tl-cell: 26px;
   }
 }
+
+/* ---------- Glossary terms in explanations */
+.term-wrap {
+  position: relative;
+  display: inline;
+}
+
+.term {
+  padding: 0;
+  border: 0;
+  border-bottom: 1px dotted currentColor;
+  background: none;
+  color: inherit;
+  font: inherit;
+  cursor: help;
+}
+
+.term-tip {
+  position: absolute;
+  left: 0;
+  bottom: calc(100% + 6px);
+  z-index: 30;
+  width: max-content;
+  max-width: 300px;
+  padding: 8px 10px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-strong);
+  background: var(--surface-strong);
+  color: var(--text);
+  box-shadow: var(--shadow);
+  font-size: 0.8rem;
+  line-height: 1.4;
+  visibility: hidden;
+  opacity: 0;
+  transition: opacity 120ms ease;
+  pointer-events: none;
+}
+
+.term-wrap:hover .term-tip,
+.term:focus-visible + .term-tip {
+  visibility: visible;
+  opacity: 1;
+}
+
+.value[title] {
+  cursor: help;
+}

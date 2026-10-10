@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { STAGE_LETTERS, padAddr } from '../../utils/format.js';
+import { metaHeaderLength } from '../../utils/listing.js';
 
 const hexBytes = (bytes) => bytes.map((b) => b.toString(16).padStart(2, '0')).join(' ');
 
@@ -24,7 +25,8 @@ export default function Listing({
 
   if (!listing?.length) return <p className="empty">Assemble a program to see its listing.</p>;
 
-  // Trim trailing blank lines.
+  // Skip the leading `# @title` / `# @summary` header block; trim trailing blank lines.
+  const begin = metaHeaderLength(listing);
   let end = listing.length;
   while (end > 0 && listing[end - 1].kind === 'blank' && !listing[end - 1].text.trim()) end -= 1;
 
@@ -40,7 +42,7 @@ export default function Listing({
           </tr>
         </thead>
         <tbody>
-          {listing.slice(0, end).map((item) => {
+          {listing.slice(begin, end).map((item) => {
             const stages = markers?.get(item.line) ?? [];
             const error = errorsByLine?.get(item.line);
             const isComment = /^\s*#/.test(item.text);

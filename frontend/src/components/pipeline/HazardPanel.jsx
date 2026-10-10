@@ -1,12 +1,24 @@
 import { EVENT_KINDS } from '../../utils/hazards.js';
 import Panel from '../common/Panel.jsx';
+import GlossaryTerm from '../common/GlossaryTerm.jsx';
+import { linkTerms } from '../../utils/glossary.js';
 
 const NAV_KINDS = ['loadUse', 'mispredict', 'ret', 'forward', 'exception'];
 
 /** Renders `code` spans written as backticks in the explanation text. */
 export function RichText({ text }) {
+  const seen = new Set();
   const parts = text.split('`');
-  return parts.map((part, i) => (i % 2 ? <code key={i}>{part}</code> : <span key={i}>{part}</span>));
+  return parts.map((part, i) => {
+    if (i % 2) return <code key={i}>{part}</code>;
+    return (
+      <span key={i}>
+        {linkTerms(part, seen).map((seg, j) => (seg.term
+          ? <GlossaryTerm key={j} text={seg.text} term={seg.term} definition={seg.definition} />
+          : seg.text))}
+      </span>
+    );
+  });
 }
 
 export default function HazardPanel({ events, onHover, navKinds, onNavKindsChange, onPrevHazard, onNextHazard, canNavigate, title = 'What is happening this cycle' }) {

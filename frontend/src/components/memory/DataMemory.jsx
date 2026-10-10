@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import { formatWord, padAddr } from '../../utils/format.js';
+import Value from '../common/Value.jsx';
 import { collectWrites, interestingWords, memoryAccess, memoryAt, readWord } from '../../utils/memory.js';
 
 /** Data words of the program plus every word it writes, at the current cycle. */
@@ -47,7 +48,7 @@ export default function DataMemory({ program, cycles, cycleIndex, mode, rsp, num
                 </td>
                 <td className="mono">{label ?? ''}</td>
                 <td className="mono">
-                  {formatWord(readWord(mem, addr), numberFormat)}
+                  <Value hex={readWord(mem, addr)} numberFormat={numberFormat} />
                   {now && access.write && <span className="mem-next"> ← {formatWord(access.data, numberFormat)}</span>}
                   {now && access.read && <span className="mem-next"> → read</span>}
                 </td>

@@ -9,6 +9,9 @@ import { pipelineMetrics, timingModel } from './metrics.js';
 import { buildTimeline } from './timeline.js';
 import { collectWrites, interestingWords, memoryAt, readWord } from './memory.js';
 import { formatWord, formatAddr, regLabel } from './format.js';
+import { linkTerms } from './glossary.js';
+import { metaHeaderLength } from './listing.js';
+import { docForMnemonic } from './instructionDocs.js';
 
 const pipe = (fixture) => fixture.modes.pipelined;
 
@@ -140,5 +143,31 @@ describe('memory', () => {
   test('sequential writes are collected too', () => {
     const writes = collectWrites(pushPop.modes.sequential.cycles, 'sequential');
     expect(writes).toHaveLength(3);
+  });
+});
+
+describe('learning aids', () => {
+  test('linkTerms links the first occurrence of each glossary term only', () => {
+    const segs = linkTerms('A stall here, then a bubble; another stall and Forwarding helps.');
+    expect(segs.filter((s) => s.term).map((s) => [s.text, s.term])).toEqual([
+      ['stall', 'Stall'], ['bubble', 'Bubble'], ['Forwarding', 'Forwarding (bypassing)'],
+    ]);
+    expect(segs.map((s) => s.text).join('')).toBe('A stall here, then a bubble; another stall and Forwarding helps.');
+    const seen = new Set(['Stall']);
+    expect(linkTerms('stalled again', seen).some((s) => s.term)).toBe(false);
+    expect(linkTerms('load/use hazard')[0]).toMatchObject({ text: 'load/use', term: 'Load/use hazard' });
+  });
+
+  test('listing skips only the leading @meta header lines', () => {
+    const { program } = loadUse;
+    expect(metaHeaderLength(program.listing)).toBe(3);
+    expect(metaHeaderLength([{ text: 'irmovq $1, %rax' }, { text: '# @title late' }])).toBe(0);
+  });
+
+  test('instruction docs cover every mnemonic', () => {
+    expect(docForMnemonic('cmovle').summary).toMatch(/^Move if less or equal/);
+    expect(docForMnemonic('jne').encoding).toBe('7 fn Dest');
+    expect(docForMnemonic('subq').summary).toMatch(/rB − rA/);
+    expect(docForMnemonic('movq')).toBe(null);
   });
 });

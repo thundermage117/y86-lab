@@ -1,5 +1,6 @@
 import { REG_NAMES } from '@y86/isa.js';
 import { formatWord } from '../../utils/format.js';
+import Value from '../common/Value.jsx';
 
 const ZERO = '0x0000000000000000';
 
@@ -21,7 +22,7 @@ export default function RegisterGrid({ registers, previous, pending, cc, newCC, 
               className={`reg${changed ? ' is-changed' : ''}${next !== undefined ? ' is-pending' : ''}${value === ZERO ? ' is-zero' : ''}`}
             >
               <span className="reg-name">%{name}</span>
-              <span className="reg-value">{formatWord(value, numberFormat)}</span>
+              <span className="reg-value"><Value hex={value} numberFormat={numberFormat} /></span>
               {next !== undefined && <span className="reg-pending">← {formatWord(next, numberFormat)}</span>}
             </div>
           );
