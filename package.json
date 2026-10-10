@@ -1,0 +1,14 @@
+{
+  "name": "y86-pipeline-visualizer",
+  "private": true,
+  "description": "Y86-64 pipelined and sequential CPU visualizer (Verilog + Node + React)",
+  "scripts": {
+    "postinstall": "npm install --prefix backend && npm install --prefix frontend",
+    "dev": "concurrently -n api,web -c blue,magenta \"npm run dev --prefix backend\" \"npm run dev --prefix frontend\"",
+    "test": "make -C hardware test && npm test --prefix backend && npm test --prefix frontend",
+    "lint": "npm run lint --prefix frontend"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  }
+}
