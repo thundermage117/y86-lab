@@ -234,3 +234,20 @@ export function findHazard(cycles, from, direction, kinds) {
   }
   return -1;
 }
+
+const TICK_PRIORITY = ['exception', 'mispredict', 'loadUse', 'ret'];
+
+/**
+ * Eventful cycles for the playback scrubber (forwarding is too common to
+ * mark). Each entry carries the most important kind for its color.
+ * @returns {{index:number, kind:string, kinds:string[]}[]}
+ */
+export function hazardTimeline(cycles) {
+  const ticks = [];
+  cycles.forEach((cycle, index) => {
+    const kinds = cycleKinds(cycle);
+    const kind = TICK_PRIORITY.find((k) => kinds.has(k));
+    if (kind) ticks.push({ index, kind, kinds: TICK_PRIORITY.filter((k) => kinds.has(k)) });
+  });
+  return ticks;
+}

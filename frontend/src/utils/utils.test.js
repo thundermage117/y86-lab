@@ -4,7 +4,7 @@ import mispredict from './__fixtures__/04_branch_mispredict.json';
 import callRet from './__fixtures__/05_call_ret.json';
 import pushPop from './__fixtures__/07_push_pop.json';
 import badAddress from './__fixtures__/09_bad_address.json';
-import { explainPipelineCycle, explainSequentialCycle, cycleKinds, findHazard } from './hazards.js';
+import { explainPipelineCycle, explainSequentialCycle, cycleKinds, findHazard, hazardTimeline } from './hazards.js';
 import { pipelineMetrics, timingModel } from './metrics.js';
 import { buildTimeline } from './timeline.js';
 import { collectWrites, interestingWords, memoryAt, readWord } from './memory.js';
@@ -68,6 +68,13 @@ describe('hazard explanations', () => {
     const all = cycles.flatMap((c) => explainPipelineCycle(c));
     expect(all.some((e) => e.title === 'Invalid memory address')).toBe(true);
     expect(all.some((e) => e.title === 'Exception ADR in Write-back')).toBe(true);
+  });
+
+  test('scrubber ticks mark eventful cycles, most important kind first', () => {
+    const ticks = hazardTimeline(pipe(loadUse).cycles);
+    expect(ticks[0]).toEqual({ index: 3, kind: 'loadUse', kinds: ['loadUse'] });
+    expect(ticks.every((t) => t.kind !== 'forward')).toBe(true);
+    expect(hazardTimeline(pipe(mispredict).cycles).some((t) => t.kind === 'mispredict')).toBe(true);
   });
 
   test('sequential cycles get a per-instruction explanation', () => {

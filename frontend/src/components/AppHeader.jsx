@@ -1,5 +1,6 @@
 import Segmented from './common/Segmented.jsx';
 import { SPEEDS } from '../hooks/usePlayback.js';
+import HazardTicks from './HazardTicks.jsx';
 
 function Icon({ name }) {
   const paths = {
@@ -19,7 +20,7 @@ function Icon({ name }) {
   );
 }
 
-function Playback({ playback, disabled }) {
+function Playback({ playback, disabled, ticks }) {
   const { index, total, playing, speed, setSpeed, seek, step, toggle } = playback;
   return (
     <div className="playback" role="group" aria-label="Cycle playback">
@@ -52,6 +53,7 @@ function Playback({ playback, disabled }) {
           disabled={disabled}
           onChange={(e) => seek(Number(e.target.value))}
         />
+        {!disabled && <HazardTicks ticks={ticks} total={total} onSeek={seek} />}
       </div>
       <label className="speed-select">
         <span className="sr-only">Playback speed</span>
@@ -64,7 +66,7 @@ function Playback({ playback, disabled }) {
 }
 
 export default function AppHeader({
-  playback, hasData, mode, onModeChange, numberFormat, onNumberFormatChange, theme, onThemeToggle, status,
+  playback, hasData, ticks, mode, onModeChange, numberFormat, onNumberFormatChange, theme, onThemeToggle, status,
 }) {
   return (
     <header className="app-header">
@@ -88,7 +90,7 @@ export default function AppHeader({
             { value: 'sequential', label: 'Sequential', title: 'Single-cycle SEQ processor' },
           ]}
         />
-        <Playback playback={playback} disabled={!hasData} />
+        <Playback playback={playback} disabled={!hasData} ticks={ticks} />
       </div>
 
       <div className="header-end">

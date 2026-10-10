@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import AppHeader from './components/AppHeader.jsx';
 import TabBar, { TabPanel } from './components/common/TabBar.jsx';
 import ProgramView from './components/program/ProgramView.jsx';
@@ -11,7 +11,7 @@ import { usePlayback } from './hooks/usePlayback.js';
 import { useTheme } from './hooks/useTheme.js';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts.js';
 import { readStored, writeStored } from './hooks/storage.js';
-import { findHazard } from './utils/hazards.js';
+import { findHazard, hazardTimeline } from './utils/hazards.js';
 
 const DEFAULT_NAV_KINDS = new Set(['loadUse', 'mispredict', 'ret', 'exception']);
 
@@ -44,6 +44,10 @@ export default function App() {
   const { result } = sim;
   const modeData = result?.modes[mode] ?? null;
   const playback = usePlayback(modeData?.cycles.length ?? 0);
+  const ticks = useMemo(
+    () => (result && mode === 'pipelined' ? hazardTimeline(result.modes.pipelined.cycles) : []),
+    [result, mode],
+  );
 
   // A new run starts from cycle 1 (adjusting state during render, not in an effect).
   const [seenResult, setSeenResult] = useState(result);
@@ -92,6 +96,7 @@ export default function App() {
       <AppHeader
         playback={playback}
         hasData={hasData}
+        ticks={ticks}
         mode={mode}
         onModeChange={setMode}
         numberFormat={numberFormat}
