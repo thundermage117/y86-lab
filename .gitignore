@@ -33,3 +33,4 @@ npm-debug.log*
 # Generated simulation traces
 hardware/**/sim/
 hardware/**/*.vcd
+hardware/build/
