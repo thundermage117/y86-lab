@@ -116,6 +116,7 @@ export function TimelineLegend() {
         <li key={k}><span className={`tl-cell stage-${k}`} aria-hidden="true">{label[0]}</span>{label}</li>
       ))}
       <li><span className="tl-cell stage-decode is-repeat" aria-hidden="true">D</span>stalled (held)</li>
+      <li><code className="tl-squashed-sample">jne</code>squashed</li>
       <li><span className="tl-mark-sample" aria-hidden="true" />event cycle (colors as in the event filter)</li>
     </ul>
   );

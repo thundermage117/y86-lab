@@ -24,10 +24,16 @@ export default function TimelineView({ result, cycleIndex, onSeek, mode }) {
   return (
     <Panel
       title="Pipeline timeline"
-      subtitle="Each row is one fetched instruction; each column a clock cycle. Repeated letters are stalls, struck-through rows were squashed. Click any cell to jump there."
+      subtitle="One row per fetched instruction, one column per cycle. Click a cell to jump to it."
       className="timeline-panel"
-      actions={<Segmented label="Cycles shown" size="sm" value={width} onChange={setWidth} options={WINDOWS} />}
+      actions={(
+        <div className="labelled-control">
+          <span aria-hidden="true">Cycles</span>
+          <Segmented label="Cycles shown" size="sm" value={width} onChange={setWidth} options={WINDOWS} />
+        </div>
+      )}
     >
+      <TimelineLegend />
       {mode === 'sequential' && (
         <p className="hint">
           This chart shows the pipelined CPU. The sequential CPU would be a single diagonal: one instruction
@@ -42,7 +48,6 @@ export default function TimelineView({ result, cycleIndex, onSeek, mode }) {
         cycleIndex={cycleIndex}
         onSeek={onSeek}
       />
-      <TimelineLegend />
     </Panel>
   );
 }
