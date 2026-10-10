@@ -43,12 +43,12 @@ export default function DataMemory({ program, cycles, cycleIndex, mode, rsp, num
             const now = accessAddr === addr;
             return (
               <tr key={addr} className={now ? (access.write ? 'is-writing' : 'is-reading') : ''}>
-                <td>
+                <td className="mono">
                   {padAddr(addr)}
-                  {rspAddr === addr && <Chip tone="accent">%rsp</Chip>}
+                  {rspAddr === addr && <>{' '}<Chip tone="accent">%rsp</Chip></>}
                 </td>
-                <td>{label ?? ''}</td>
-                <td>
+                <td className="mono">{label ?? ''}</td>
+                <td className="mono">
                   <Value hex={readWord(mem, addr)} numberFormat={numberFormat} />
                   {now && access.write && <span className="mem-next"> ← {formatWord(access.data, numberFormat)}</span>}
                   {now && access.read && <span className="mem-next"> → read</span>}

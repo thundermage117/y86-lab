@@ -22,7 +22,7 @@ export default function Icon({ name, size = 18 }) {
 }
 
 /** Square icon-only button; `label` is its accessible name. */
-export function IconButton({ icon, label, title = label, primary = false, size = 'md', className = '', iconSize, ...rest }) {
+export function IconButton({ icon, label, title = label, primary = false, size = 'md', className = '', ...rest }) {
   return (
     <button
       type="button"
@@ -31,7 +31,7 @@ export function IconButton({ icon, label, title = label, primary = false, size =
       title={title}
       {...rest}
     >
-      <Icon name={icon} size={iconSize ?? (size === 'sm' ? 16 : 18)} />
+      <Icon name={icon} size={size === 'sm' ? 16 : 18} />
     </button>
   );
 }

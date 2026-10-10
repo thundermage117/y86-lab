@@ -4,7 +4,7 @@ import GlossaryTerm from '../common/GlossaryTerm.jsx';
 import { linkTerms } from '../../utils/glossary.js';
 
 /** Renders `code` spans written as backticks in the explanation text. */
-export function RichText({ text }) {
+function RichText({ text }) {
   const seen = new Set();
   const parts = text.split('`');
   return parts.map((part, i) => {
