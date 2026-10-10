@@ -16,6 +16,17 @@ export default defineConfig({
       '/api': `http://localhost:${process.env.API_PORT ?? 3001}`,
     },
   },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: (id) => {
+          if (id.includes('node_modules/@codemirror') || id.includes('node_modules/@lezer') || id.includes('node_modules/codemirror')) return 'codemirror';
+          if (id.includes('node_modules/react')) return 'react';
+          return undefined;
+        },
+      },
+    },
+  },
   test: {
     environment: 'jsdom',
     include: ['src/**/*.test.{js,jsx}'],

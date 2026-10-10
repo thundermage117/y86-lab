@@ -37,7 +37,7 @@ export default function TimelineView({ result, cycleIndex, onSeek, mode }) {
     const left = r.left - b.left - box.clientWidth / 2;
     const top = r.top - b.top - box.clientHeight / 2;
     const far = Math.abs(left) > box.clientWidth * 2 || Math.abs(top) > box.clientHeight * 2;
-    box.scrollBy({ left, top, behavior: far ? 'auto' : 'smooth' });
+    box.scrollBy?.({ left, top, behavior: far ? 'auto' : 'smooth' });
   }, [width, cycleIndex]);
 
   const columns = Array.from({ length: span }, (_, i) => start + i);

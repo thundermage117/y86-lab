@@ -17,7 +17,7 @@ export default function Listing({ listing, markers, showBytes = true, errorsByLi
     if (!row) return;
     const box = container.current;
     const top = row.offsetTop - box.clientHeight / 3;
-    box.scrollTo({ top: Math.max(0, top), behavior: 'smooth' });
+    box.scrollTo?.({ top: Math.max(0, top), behavior: 'smooth' });
   }, [follow, firstMarked]);
 
   if (!listing?.length) return <p className="empty">Assemble a program to see its listing.</p>;
