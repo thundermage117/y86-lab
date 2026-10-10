@@ -27,8 +27,10 @@ describe('App', () => {
     await waitFor(() => expect(screen.getByText('Halted OK')).toBeTruthy());
     expect(globalThis.fetch).toHaveBeenCalledWith('/api/simulate', expect.objectContaining({ method: 'POST' }));
 
+    // Playback only appears on the cycle-based views.
+    expect(screen.queryByRole('button', { name: 'Next cycle' })).toBeNull();
     fireEvent.click(screen.getByRole('tab', { name: 'Step' }));
-    for (let i = 0; i < 3; i += 1) fireEvent.click(screen.getByRole('button', { name: 'Next cycle' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next event' }));
     expect(screen.getByText(/Cycle/).textContent).toContain('4');
     expect(screen.getByText('Load/use hazard on %rax')).toBeTruthy();
     const decode = screen.getByRole('article', { name: /Decode stage/ });

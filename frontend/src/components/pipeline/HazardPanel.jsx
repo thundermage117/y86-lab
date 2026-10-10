@@ -2,9 +2,6 @@ import { EVENT_KINDS } from '../../utils/hazards.js';
 import Panel from '../common/Panel.jsx';
 import GlossaryTerm from '../common/GlossaryTerm.jsx';
 import { linkTerms } from '../../utils/glossary.js';
-import Chip from '../common/Chip.jsx';
-
-const NAV_KINDS = ['loadUse', 'mispredict', 'ret', 'forward', 'exception'];
 
 /** Renders `code` spans written as backticks in the explanation text. */
 export function RichText({ text }) {
@@ -22,35 +19,9 @@ export function RichText({ text }) {
   });
 }
 
-export default function HazardPanel({ events, onHover, navKinds, onNavKindsChange, onPrevHazard, onNextHazard, canNavigate, title = 'What is happening this cycle' }) {
-  const toggleKind = (kind) => {
-    const next = new Set(navKinds);
-    if (next.has(kind)) next.delete(kind); else next.add(kind);
-    if (next.size > 0) onNavKindsChange(next);
-  };
-
+export default function HazardPanel({ events, onHover, title = 'What is happening this cycle' }) {
   return (
-    <Panel
-      title={title}
-      className="hazard-panel"
-      actions={canNavigate ? (
-        <div className="hazard-nav">
-          <button type="button" className="btn btn-sm" onClick={onPrevHazard} title="Previous event ([)">← Prev</button>
-          <button type="button" className="btn btn-sm" onClick={onNextHazard} title="Next event (])">Next →</button>
-        </div>
-      ) : null}
-    >
-      {canNavigate && (
-        <fieldset className="hazard-filter">
-          <legend className="sr-only">Jump between</legend>
-          {NAV_KINDS.map((kind) => (
-            <Chip as="label" key={kind} variant="quiet" tone={EVENT_KINDS[kind].tone}>
-              <input type="checkbox" checked={navKinds.has(kind)} onChange={() => toggleKind(kind)} />
-              {EVENT_KINDS[kind].label}
-            </Chip>
-          ))}
-        </fieldset>
-      )}
+    <Panel title={title} className="hazard-panel">
       {events.length === 0 ? (
         <p className="calm">
           Smooth sailing: every stage passes its instruction on to the next one. No stalls, bubbles or forwarding this cycle.

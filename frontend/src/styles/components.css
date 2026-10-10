@@ -207,6 +207,11 @@ label.chip input {
   accent-color: var(--chip);
 }
 
+label.chip:has(input:not(:checked)) {
+  border-color: var(--border);
+  color: var(--muted);
+}
+
 /* Stage letter badge (F D E M W) */
 .stage-badge {
   display: inline-grid;
@@ -230,36 +235,42 @@ label.chip input {
 
 :root[data-theme="light"] .stage-badge { color: #fff; }
 
-/* ---------- Playback */
+/* ---------- Transport: playback, cycle slider, events */
 .playback {
   display: flex;
   align-items: center;
-  gap: var(--space-sm);
-  min-width: 0;
+  gap: var(--space-xs);
 }
 
 .cycle-scrub {
-  display: grid;
-  gap: var(--space-2xs);
-  width: clamp(140px, 22vw, 320px);
-  margin-left: var(--space-sm);
+  display: flex;
+  flex: 1 1 280px;
+  align-items: center;
+  gap: var(--space-md);
+  min-width: 0;
 }
 
 .cycle-label {
+  min-width: 96px;
   font-size: var(--text-sm);
   color: var(--muted);
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
 }
 
 .cycle-label strong {
   color: var(--text);
-  font-variant-numeric: tabular-nums;
 }
 
-.cycle-scrub {
+.cycle-track {
   position: relative;
+  flex: 1;
+  min-width: 0;
+  padding-bottom: var(--space-sm);
 }
 
-.cycle-scrub input[type="range"] {
+.cycle-track input[type="range"] {
+  display: block;
   width: 100%;
   margin: 0;
   accent-color: var(--accent);
@@ -267,7 +278,8 @@ label.chip input {
 
 .hazard-ticks {
   --thumb: 16px;
-  position: relative;
+  position: absolute;
+  inset: auto 0 0;
   height: 6px;
 }
 
@@ -289,18 +301,38 @@ label.chip input {
   height: 9px;
 }
 
-/* ---------- Status pill */
+.event-nav {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  min-width: 0;
+  padding-left: var(--space-lg);
+  border-left: 1px solid var(--border);
+}
+
+.event-filter {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-xs);
+  min-width: 0;
+  margin: 0 0 0 var(--space-xs);
+  padding: 0;
+  border: 0;
+}
+
 /* ---------- Tabs */
 .tab-bar {
   display: flex;
-  gap: var(--space-xs);
   overflow-x: auto;
-  border-bottom: 1px solid var(--border);
+  scrollbar-width: none;
 }
 
 .tab {
   position: relative;
-  padding: var(--space-sm) var(--space-lg);
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  padding: var(--space-sm) var(--space-md);
   border: 0;
   background: transparent;
   color: var(--muted);
@@ -320,11 +352,11 @@ label.chip input {
 .tab.is-active::after {
   content: "";
   position: absolute;
-  left: 10px;
-  right: 10px;
-  bottom: -1px;
+  left: var(--space-sm);
+  right: var(--space-sm);
+  bottom: 0;
   height: 2px;
-  border-radius: var(--radius-xs);
+  border-radius: var(--radius-2xs);
   background: var(--accent);
 }
 
@@ -661,20 +693,6 @@ label.chip input {
 }
 
 /* ---------- Events (hazard explainer) */
-.hazard-nav {
-  display: flex;
-  gap: var(--space-sm);
-}
-
-.hazard-filter {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-sm);
-  margin: 0 0 var(--space-md);
-  padding: 0;
-  border: 0;
-}
-
 .event-list {
   display: grid;
   gap: var(--space-md);
@@ -1271,6 +1289,21 @@ label.chip input {
 }
 
 @media (max-width: 760px) {
+  .cycle-scrub {
+    order: 1;
+    flex-basis: 100%;
+  }
+  .event-nav {
+    order: 2;
+    flex-basis: 100%;
+    padding-left: 0;
+    border-left: 0;
+  }
+  .event-filter {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
   .tl-scroller,
   .tl-scroller.is-compact {
     --tl-label: 128px;
@@ -1300,7 +1333,7 @@ label.chip input {
   bottom: calc(100% + 6px);
   z-index: 30;
   width: max-content;
-  max-width: 300px;
+  max-width: min(300px, calc(100vw - var(--space-2xl)));
   padding: var(--space-sm) var(--space-md);
   border-radius: var(--radius-sm);
   border: 1px solid var(--border-strong);
@@ -1309,16 +1342,13 @@ label.chip input {
   box-shadow: var(--shadow);
   font-size: var(--text-sm);
   line-height: 1.4;
-  visibility: hidden;
-  opacity: 0;
-  transition: opacity 120ms ease;
   pointer-events: none;
+  display: none; /* hidden tips must not widen the page */
 }
 
 .term-wrap:hover .term-tip,
 .term:focus-visible + .term-tip {
-  visibility: visible;
-  opacity: 1;
+  display: block;
 }
 
 .value[title] {

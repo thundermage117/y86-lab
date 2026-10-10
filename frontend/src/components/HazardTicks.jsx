@@ -2,7 +2,7 @@ import { EVENT_KINDS } from '../utils/hazards.js';
 
 /**
  * Marks eventful cycles along the cycle slider. Decorative for assistive tech:
- * the hazard Prev/Next buttons and [ / ] keys are the accessible route.
+ * the event Prev/Next buttons and [ / ] keys are the accessible route.
  */
 export default function HazardTicks({ ticks, total, onSeek }) {
   if (!ticks?.length || total < 2) return null;

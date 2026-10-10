@@ -18,7 +18,7 @@ const MINI_RADIUS = 8;
  * The single "Step" workspace: everything about one cycle on one screen,
  * cross-linked by the instruction under the pointer.
  */
-export default function StepView({ result, mode, cycleIndex, numberFormat, onSeek, nav }) {
+export default function StepView({ result, mode, cycleIndex, numberFormat, onSeek }) {
   const modeData = result.modes[mode];
   const cycle = modeData.cycles[cycleIndex];
   const previous = cycleIndex > 0 ? modeData.cycles[cycleIndex - 1] : null;
@@ -78,9 +78,7 @@ export default function StepView({ result, mode, cycleIndex, numberFormat, onSee
         <HazardPanel
           events={events}
           onHover={setHoveredStages}
-          canNavigate={pipelined}
           title={pipelined ? 'What is happening this cycle' : 'This cycle'}
-          {...(pipelined ? nav : {})}
         />
         <Panel
           id="source"

@@ -4,43 +4,41 @@
   min-height: 100vh;
 }
 
-/* ---------- Header */
+/* ---------- Header: brand · tabs · settings · status */
 .app-header {
+  --header-h: 52px;
   position: sticky;
   top: 0;
   z-index: 20;
   display: grid;
-  grid-template-columns: auto 1fr auto;
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
+  grid-template-areas: "brand tabs settings status";
   align-items: center;
-  gap: var(--space-lg);
-  padding: var(--space-md) var(--space-xl);
+  column-gap: var(--space-xl);
+  min-height: var(--header-h);
+  padding: 0 var(--space-xl);
   background: color-mix(in srgb, var(--bg) 82%, transparent);
   backdrop-filter: blur(14px);
   border-bottom: 1px solid var(--border);
 }
 
 .brand {
+  grid-area: brand;
   display: flex;
   align-items: center;
-  gap: var(--space-md);
+  gap: var(--space-sm);
 }
 
 .brand h1 {
-  font-size: var(--text-lg);
+  font-size: var(--text-base);
   font-weight: 600;
-  letter-spacing: 0.01em;
   white-space: nowrap;
-}
-
-.brand-sub {
-  font-size: var(--text-xs);
-  color: var(--muted);
 }
 
 .brand-mark {
   display: grid;
-  grid-template-columns: repeat(4, 7px);
-  grid-template-rows: repeat(4, 7px);
+  grid-template-columns: repeat(4, 5px);
+  grid-template-rows: repeat(4, 5px);
   gap: 1px;
 }
 
@@ -53,18 +51,36 @@
 .brand-mark i:nth-child(3) { grid-area: 3 / 3; background: var(--stage-execute); }
 .brand-mark i:nth-child(4) { grid-area: 4 / 4; background: var(--stage-memory); }
 
-.header-controls {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--space-lg);
-  min-width: 0;
+.main-tabs {
+  grid-area: tabs;
+  align-self: stretch;
 }
 
-.header-end {
+.header-settings {
+  grid-area: settings;
   display: flex;
   align-items: center;
-  gap: var(--space-md);
+  gap: var(--space-sm);
+}
+
+.status-chip {
+  grid-area: status;
+  justify-self: end;
+}
+
+/* ---------- Transport (Step and Timeline only) */
+.transport {
+  position: sticky;
+  top: var(--header-h, 52px);
+  z-index: 19;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-sm) var(--space-lg);
+  padding: var(--space-sm) var(--space-xl);
+  background: color-mix(in srgb, var(--bg) 82%, transparent);
+  backdrop-filter: blur(14px);
+  border-bottom: 1px solid var(--border);
 }
 
 /* ---------- Main */
@@ -74,10 +90,6 @@
   max-width: 1560px;
   margin: 0 auto;
   padding: var(--space-lg) var(--space-xl) var(--space-2xl);
-}
-
-.main-tabs {
-  margin-bottom: var(--space-lg);
 }
 
 .app-footer {
@@ -156,13 +168,19 @@
 
 @media (max-width: 1100px) {
   .app-header {
-    grid-template-columns: 1fr auto;
+    position: static;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    grid-template-areas:
+      "brand settings status"
+      "tabs tabs tabs";
+    row-gap: var(--space-2xs);
+    padding-top: var(--space-sm);
   }
-  .header-controls {
-    grid-column: 1 / -1;
-    grid-row: 2;
-    justify-content: flex-start;
-    flex-wrap: wrap;
+  .header-settings {
+    justify-self: end;
+  }
+  .transport {
+    top: 0;
   }
   .stage-strip {
     grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
@@ -181,11 +199,22 @@
 
 @media (max-width: 760px) {
   .app-header {
-    position: static;
-    padding: var(--space-md) var(--space-lg);
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      "brand status"
+      "settings settings"
+      "tabs tabs";
+    row-gap: var(--space-sm);
+    padding: var(--space-sm) var(--space-lg) 0;
   }
-  .brand-sub {
+  .header-settings {
+    justify-self: start;
+  }
+  .brand-long {
     display: none;
+  }
+  .transport {
+    padding: var(--space-sm) var(--space-lg);
   }
   .app-main {
     padding: var(--space-md) var(--space-lg) var(--space-xl);

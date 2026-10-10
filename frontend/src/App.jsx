@@ -1,6 +1,7 @@
 import { useCallback, useMemo, useState } from 'react';
 import AppHeader from './components/AppHeader.jsx';
-import TabBar, { TabPanel } from './components/common/TabBar.jsx';
+import Transport from './components/Transport.jsx';
+import { TabPanel } from './components/common/TabBar.jsx';
 import ProgramView from './components/program/ProgramView.jsx';
 import StepView from './components/step/StepView.jsx';
 import TimelineView from './components/timeline/TimelineView.jsx';
@@ -44,10 +45,13 @@ export default function App() {
   const { result } = sim;
   const modeData = result?.modes[mode] ?? null;
   const playback = usePlayback(modeData?.cycles.length ?? 0);
-  const ticks = useMemo(
-    () => (result && mode === 'pipelined' ? hazardTimeline(result.modes.pipelined.cycles) : []),
-    [result, mode],
+  const pipelined = mode === 'pipelined';
+  const allTicks = useMemo(
+    () => (result && pipelined ? hazardTimeline(result.modes.pipelined.cycles) : []),
+    [result, pipelined],
   );
+  // The event chips filter both the [ / ] jumps and the slider ticks.
+  const ticks = useMemo(() => allTicks.filter((t) => t.kinds.some((k) => navKinds.has(k))), [allTicks, navKinds]);
 
   // A new run starts from cycle 1 (adjusting state during render, not in an effect).
   const [seenResult, setSeenResult] = useState(result);
@@ -89,14 +93,21 @@ export default function App() {
   ];
   const hasData = Boolean(modeData?.cycles.length);
   const view = { result, cycleIndex: playback.index, numberFormat };
+  const showTransport = hasData && (tab === 'step' || tab === 'timeline');
+  const nav = pipelined ? {
+    navKinds,
+    onNavKindsChange: setNavKinds,
+    onPrev: () => jumpHazard(-1),
+    onNext: () => jumpHazard(1),
+  } : null;
 
   return (
     <div className="app">
       <a className="skip-link" href="#main">Skip to content</a>
       <AppHeader
-        playback={playback}
-        hasData={hasData}
-        ticks={ticks}
+        tabs={tabs}
+        tab={tab}
+        onTabChange={setTab}
         mode={mode}
         onModeChange={setMode}
         numberFormat={numberFormat}
@@ -105,6 +116,7 @@ export default function App() {
         onThemeToggle={toggleTheme}
         status={statusOf(sim, modeData)}
       />
+      {showTransport && <Transport playback={playback} ticks={ticks} nav={nav} />}
 
       <main id="main" className="app-main">
         {sim.status === 'error' && sim.error && (
@@ -116,24 +128,12 @@ export default function App() {
           </div>
         )}
 
-        <TabBar tabs={tabs} active={tab} onChange={setTab} label="Views" idPrefix="view" className="main-tabs" />
-
         <TabPanel idPrefix="view" tabKey={tab} className="view">
           {tab === 'program' && <ProgramView sim={sim} onRun={run} onOpenPipeline={() => setTab('step')} />}
           {tab === 'learn' && <LearnView />}
           {tab !== 'program' && tab !== 'learn' && !hasData && <NeedsRun status={sim.status} />}
           {hasData && tab === 'step' && (
-            <StepView
-              {...view}
-              mode={mode}
-              onSeek={playback.seek}
-              nav={{
-                navKinds,
-                onNavKindsChange: setNavKinds,
-                onPrevHazard: () => jumpHazard(-1),
-                onNextHazard: () => jumpHazard(1),
-              }}
-            />
+            <StepView {...view} mode={mode} onSeek={playback.seek} />
           )}
           {hasData && tab === 'timeline' && <TimelineView {...view} mode={mode} onSeek={playback.seek} />}
           {hasData && tab === 'performance' && <PerformanceView result={result} />}
