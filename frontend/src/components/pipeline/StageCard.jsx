@@ -1,6 +1,7 @@
 import { ICODE, STAT } from '@y86/isa.js';
 import { STAGE_LABELS, STAGE_LETTERS, formatWord, formatAddr, regLabel } from '../../utils/format.js';
 import Value from '../common/Value.jsx';
+import Chip from '../common/Chip.jsx';
 
 const FWD_STAGE = { e_valE: 'execute', M_valE: 'memory', m_valM: 'memory', W_valE: 'writeback', W_valM: 'writeback' };
 
@@ -21,7 +22,7 @@ function operandRow(name, src, val, fwd, numberFormat) {
       key={name}
       label={`${name} ${regLabel(src)}`}
       value={<Value hex={val} numberFormat={numberFormat} />}
-      note={stage ? <span className={`fwd-chip stage-${stage}`}>← {fwd}</span> : <span className="fwd-chip">regfile</span>}
+      note={stage ? <Chip stage={stage}>← {fwd}</Chip> : <Chip variant="quiet">regfile</Chip>}
     />
   );
 }
@@ -37,7 +38,7 @@ function stageRows(key, s, fmt, addr, control, numberFormat) {
       ];
     case 'decode': {
       const rows = [];
-      if (s.icode === ICODE.CALL || s.icode === ICODE.JXX) rows.push(<Row key="valA" label="valA" value={addr(s.valP)} note={<span className="fwd-chip">valP</span>} />);
+      if (s.icode === ICODE.CALL || s.icode === ICODE.JXX) rows.push(<Row key="valA" label="valA" value={addr(s.valP)} note={<Chip variant="quiet">valP</Chip>} />);
       else rows.push(operandRow('valA', s.srcA, s.valA, s.fwdA, numberFormat));
       rows.push(operandRow('valB', s.srcB, s.valB, s.fwdB, numberFormat));
       if (s.dstE !== 15) rows.push(<Row key="dstE" label="dstE" value={regLabel(s.dstE)} />);
@@ -88,12 +89,12 @@ export default function StageCard({ stageKey, stage, control, numberFormat, high
       aria-label={`${STAGE_LABELS[stageKey]} stage: ${stage?.bubble ? 'bubble' : stage?.text ?? 'empty'}`}
     >
       <header className="stage-card-header">
-        <span className="stage-letter" aria-hidden="true">{letter}</span>
+        <span className="stage-badge stage-badge-lg" aria-hidden="true">{letter}</span>
         <span className="stage-name">{STAGE_LABELS[stageKey]}</span>
         <span className="stage-flags">
-          {stalled && <span className="flag flag-stall">stall</span>}
-          {bubbleNext && <span className="flag flag-bubble">bubble next</span>}
-          {bad && <span className="flag flag-error">{stage.statName}</span>}
+          {stalled && <Chip tone="stall">stall</Chip>}
+          {bubbleNext && <Chip tone="bubble">bubble next</Chip>}
+          {bad && <Chip tone="error">{stage.statName}</Chip>}
         </span>
       </header>
       {stage?.bubble ? (

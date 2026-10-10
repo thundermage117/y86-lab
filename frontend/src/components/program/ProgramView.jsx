@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import Panel from '../common/Panel.jsx';
 import Y86Editor from './Y86Editor.jsx';
 import Listing from './Listing.jsx';
+import Chip from '../common/Chip.jsx';
 
 export default function ProgramView({ sim, onRun, onOpenPipeline }) {
   const { examples, exampleId, example, selectExample, source, setSource, diagnostics, status, result, dirty } = sim;
@@ -54,7 +55,7 @@ export default function ProgramView({ sim, onRun, onOpenPipeline }) {
           <Panel title={example.title} className="example-card">
             <p>{example.summary}</p>
             <ul className="concept-tags" aria-label="Concepts">
-              {example.concepts.map((c) => <li key={c}>{c}</li>)}
+              {example.concepts.map((c) => <Chip as="li" key={c} variant="quiet">{c}</Chip>)}
             </ul>
           </Panel>
         )}

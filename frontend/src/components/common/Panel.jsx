@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { readStored, writeStored } from '../../hooks/storage.js';
+import { IconButton } from './Icon.jsx';
 
 /**
  * A titled card section. With `collapsible` (requires `id`) the body can be
@@ -29,17 +30,16 @@ export default function Panel({ title, subtitle, actions, children, className = 
           <div className="panel-actions">
             {!collapsed && actions}
             {collapsible && (
-              <button
-                type="button"
-                className="panel-toggle"
+              <IconButton
+                icon={collapsed ? 'chevronRight' : 'chevronDown'}
+                size="sm"
+                className="icon-btn-ghost"
+                label={collapsed ? `Expand ${title}` : `Collapse ${title}`}
+                title={collapsed ? 'Expand' : 'Collapse'}
                 aria-expanded={!collapsed}
                 aria-controls={bodyId}
                 onClick={toggle}
-                title={collapsed ? 'Expand' : 'Collapse'}
-              >
-                <span aria-hidden="true">{collapsed ? '▸' : '▾'}</span>
-                <span className="sr-only">{collapsed ? `Expand ${title}` : `Collapse ${title}`}</span>
-              </button>
+              />
             )}
           </div>
         </header>

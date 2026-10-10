@@ -1,24 +1,8 @@
 import Segmented from './common/Segmented.jsx';
 import { SPEEDS } from '../hooks/usePlayback.js';
 import HazardTicks from './HazardTicks.jsx';
-
-function Icon({ name }) {
-  const paths = {
-    first: 'M6 5h2v14H6zM20 5v14L9 12z',
-    prev: 'M15 5v14L6 12z',
-    play: 'M8 5v14l11-7z',
-    pause: 'M7 5h4v14H7zM13 5h4v14h-4z',
-    next: 'M9 5v14l9-7z',
-    last: 'M16 5h2v14h-2zM4 5v14l11-7z',
-    sun: 'M12 7a5 5 0 1 0 0 10 5 5 0 0 0 0-10zm0-5 1 3h-2zm0 20-1-3h2zM2 12l3-1v2zm20 0-3 1v-2zM4.9 4.9l2.8 1.4-1.4 1.4zm14.2 14.2-2.8-1.4 1.4-1.4zM4.9 19.1l1.4-2.8 1.4 1.4zM19.1 4.9l-1.4 2.8-1.4-1.4z',
-    moon: 'M20 15.5A8.5 8.5 0 0 1 8.5 4a8.5 8.5 0 1 0 11.5 11.5z',
-  };
-  return (
-    <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false">
-      <path d={paths[name]} fill="currentColor" />
-    </svg>
-  );
-}
+import Icon from './common/Icon.jsx';
+import Chip from './common/Chip.jsx';
 
 function Playback({ playback, disabled, ticks }) {
   const { index, total, playing, speed, setSpeed, seek, step, toggle } = playback;
@@ -30,7 +14,7 @@ function Playback({ playback, disabled, ticks }) {
       <button type="button" className="icon-btn" onClick={() => step(-1)} disabled={disabled || index === 0} aria-label="Previous cycle" title="Previous cycle (←)">
         <Icon name="prev" />
       </button>
-      <button type="button" className="icon-btn icon-btn-primary" onClick={toggle} disabled={disabled} aria-label={playing ? 'Pause' : 'Play'} title="Play / pause (Space)">
+      <button type="button" className="icon-btn is-primary" onClick={toggle} disabled={disabled} aria-label={playing ? 'Pause' : 'Play'} title="Play / pause (Space)">
         <Icon name={playing ? 'pause' : 'play'} />
       </button>
       <button type="button" className="icon-btn" onClick={() => step(1)} disabled={disabled || index >= total - 1} aria-label="Next cycle" title="Next cycle (→)">
@@ -110,9 +94,9 @@ export default function AppHeader({
         >
           <Icon name={theme === 'dark' ? 'sun' : 'moon'} />
         </button>
-        <span className={`status-pill status-${status.tone}`} role="status" aria-live="polite">
+        <Chip tone={status.tone} role="status" aria-live="polite">
           {status.label}
-        </span>
+        </Chip>
       </div>
     </header>
   );

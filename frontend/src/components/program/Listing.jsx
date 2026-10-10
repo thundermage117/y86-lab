@@ -62,7 +62,7 @@ export default function Listing({
               >
                 <td className="listing-stages">
                   {stages.map((s) => (
-                    <span key={s} className={`stage-chip stage-${s}`} title={s}>{STAGE_LETTERS[s]}</span>
+                    <span key={s} className={`stage-badge stage-${s}`} title={s}>{STAGE_LETTERS[s]}</span>
                   ))}
                 </td>
                 <td className="listing-addr">{item.addr !== null && item.kind !== 'blank' ? padAddr(item.addr, 3) : ''}</td>

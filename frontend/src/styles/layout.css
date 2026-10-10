@@ -12,8 +12,8 @@
   display: grid;
   grid-template-columns: auto 1fr auto;
   align-items: center;
-  gap: 20px;
-  padding: 10px 24px;
+  gap: var(--space-lg);
+  padding: var(--space-md) var(--space-xl);
   background: color-mix(in srgb, var(--bg) 82%, transparent);
   backdrop-filter: blur(14px);
   border-bottom: 1px solid var(--border);
@@ -22,18 +22,18 @@
 .brand {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: var(--space-md);
 }
 
 .brand h1 {
-  font-size: 1.02rem;
+  font-size: var(--text-lg);
   font-weight: 600;
   letter-spacing: 0.01em;
   white-space: nowrap;
 }
 
 .brand-sub {
-  font-size: 0.78rem;
+  font-size: var(--text-xs);
   color: var(--muted);
 }
 
@@ -45,7 +45,7 @@
 }
 
 .brand-mark i {
-  border-radius: 2px;
+  border-radius: var(--radius-2xs);
 }
 
 .brand-mark i:nth-child(1) { grid-area: 1 / 1; background: var(--stage-fetch); }
@@ -57,14 +57,14 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 16px;
+  gap: var(--space-lg);
   min-width: 0;
 }
 
 .header-end {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: var(--space-md);
 }
 
 /* ---------- Main */
@@ -73,20 +73,20 @@
   width: 100%;
   max-width: 1560px;
   margin: 0 auto;
-  padding: 16px 24px 32px;
+  padding: var(--space-lg) var(--space-xl) var(--space-2xl);
 }
 
 .main-tabs {
-  margin-bottom: 16px;
+  margin-bottom: var(--space-lg);
 }
 
 .app-footer {
   display: flex;
   flex-wrap: wrap;
   justify-content: space-between;
-  gap: 8px;
-  padding: 14px 24px;
-  font-size: 0.8rem;
+  gap: var(--space-sm);
+  padding: var(--space-md) var(--space-xl);
+  font-size: var(--text-sm);
   color: var(--muted);
   border-top: 1px solid var(--border);
 }
@@ -166,7 +166,7 @@
   }
   .stage-strip {
     grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-    gap: 12px;
+    gap: var(--space-md);
   }
   .stage-strip .connector,
   .arc-band {
@@ -182,13 +182,13 @@
 @media (max-width: 760px) {
   .app-header {
     position: static;
-    padding: 10px 16px;
+    padding: var(--space-md) var(--space-lg);
   }
   .brand-sub {
     display: none;
   }
   .app-main {
-    padding: 12px 16px 24px;
+    padding: var(--space-md) var(--space-lg) var(--space-xl);
   }
   .step-detail {
     grid-template-columns: minmax(0, 1fr);

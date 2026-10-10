@@ -83,7 +83,7 @@ export default function StageFlow({ cycle, numberFormat, highlighted, focusUid, 
         {centers?.width > 0 && arcs.map((arc, i) => (
           <span
             key={arc.label}
-            className={`arc-label${arc.blocked ? ' is-blocked' : ''}`}
+            className={`chip chip-outline arc-label ${arc.blocked ? 'tone-stall' : 'tone-forward'}`}
             style={{ left: (centers[arc.from] + centers.decode) / 2, top: i * 12 }}
           >
             {arc.label}

@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { formatWord, padAddr } from '../../utils/format.js';
 import Value from '../common/Value.jsx';
 import { collectWrites, interestingWords, memoryAccess, memoryAt, readWord } from '../../utils/memory.js';
+import Chip from '../common/Chip.jsx';
 
 /** Data words of the program plus every word it writes, at the current cycle. */
 export default function DataMemory({ program, cycles, cycleIndex, mode, rsp, numberFormat }) {
@@ -42,12 +43,12 @@ export default function DataMemory({ program, cycles, cycleIndex, mode, rsp, num
             const now = accessAddr === addr;
             return (
               <tr key={addr} className={now ? (access.write ? 'is-writing' : 'is-reading') : ''}>
-                <td className="mono">
+                <td>
                   {padAddr(addr)}
-                  {rspAddr === addr && <span className="ptr-chip">%rsp</span>}
+                  {rspAddr === addr && <Chip tone="accent">%rsp</Chip>}
                 </td>
-                <td className="mono">{label ?? ''}</td>
-                <td className="mono">
+                <td>{label ?? ''}</td>
+                <td>
                   <Value hex={readWord(mem, addr)} numberFormat={numberFormat} />
                   {now && access.write && <span className="mem-next"> ← {formatWord(access.data, numberFormat)}</span>}
                   {now && access.read && <span className="mem-next"> → read</span>}

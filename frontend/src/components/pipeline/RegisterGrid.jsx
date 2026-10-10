@@ -1,6 +1,7 @@
 import { REG_NAMES } from '@y86/isa.js';
 import { formatWord } from '../../utils/format.js';
 import Value from '../common/Value.jsx';
+import Chip from '../common/Chip.jsx';
 
 const ZERO = '0x0000000000000000';
 
@@ -31,9 +32,9 @@ export default function RegisterGrid({ registers, previous, pending, cc, newCC, 
       <div className="cc-row" aria-label="Condition codes">
         <span className="cc-title">CC</span>
         {['zf', 'sf', 'of'].map((f) => (
-          <span key={f} className={`cc-flag${cc?.[f] ? ' is-set' : ''}`} title={`${f.toUpperCase()} = ${cc?.[f] ? 1 : 0}`}>
+          <Chip key={f} variant={cc?.[f] ? 'outline' : 'quiet'} tone={cc?.[f] ? 'accent' : undefined} title={`${f.toUpperCase()} = ${cc?.[f] ? 1 : 0}`}>
             {f.toUpperCase()} {cc ? +cc[f] : '–'}
-          </span>
+          </Chip>
         ))}
         {newCC && (
           <span className="cc-next">

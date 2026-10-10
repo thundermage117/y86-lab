@@ -1,4 +1,5 @@
 import { useRef } from 'react';
+import Chip from './Chip.jsx';
 
 /**
  * Accessible tab list (WAI-ARIA tabs pattern): roving tabindex, arrow keys,
@@ -40,7 +41,7 @@ export default function TabBar({ tabs, active, onChange, label, idPrefix, classN
             onKeyDown={(e) => onKeyDown(e, index)}
           >
             {tab.label}
-            {tab.badge ? <span className="tab-badge">{tab.badge}</span> : null}
+            {tab.badge ? <Chip variant="solid" tone="error" className="tab-badge">{tab.badge}</Chip> : null}
           </button>
         );
       })}

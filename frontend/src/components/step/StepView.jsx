@@ -89,7 +89,7 @@ export default function StepView({ result, mode, cycleIndex, numberFormat, onSee
           subtitle={pipelined ? 'Each instruction in flight is tagged with its stage.' : undefined}
           className="source-panel"
           actions={(
-            <label className="inline-check">
+            <label className="check">
               <input type="checkbox" checked={showBytes} onChange={(e) => setShowBytes(e.target.checked)} />
               bytes
             </label>

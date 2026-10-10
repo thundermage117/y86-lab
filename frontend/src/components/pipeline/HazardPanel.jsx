@@ -2,6 +2,7 @@ import { EVENT_KINDS } from '../../utils/hazards.js';
 import Panel from '../common/Panel.jsx';
 import GlossaryTerm from '../common/GlossaryTerm.jsx';
 import { linkTerms } from '../../utils/glossary.js';
+import Chip from '../common/Chip.jsx';
 
 const NAV_KINDS = ['loadUse', 'mispredict', 'ret', 'forward', 'exception'];
 
@@ -43,10 +44,10 @@ export default function HazardPanel({ events, onHover, navKinds, onNavKindsChang
         <fieldset className="hazard-filter">
           <legend className="sr-only">Jump between</legend>
           {NAV_KINDS.map((kind) => (
-            <label key={kind} className={`filter-chip tone-${EVENT_KINDS[kind].tone}`}>
+            <Chip as="label" key={kind} variant="quiet" tone={EVENT_KINDS[kind].tone}>
               <input type="checkbox" checked={navKinds.has(kind)} onChange={() => toggleKind(kind)} />
               {EVENT_KINDS[kind].label}
-            </label>
+            </Chip>
           ))}
         </fieldset>
       )}
