@@ -25,7 +25,7 @@ function operandRow(name, src, val, fwd, fmt) {
   );
 }
 
-function stageRows(key, s, fmt, addr) {
+function stageRows(key, s, fmt, addr, control) {
   switch (key) {
     case 'fetch':
       return [
@@ -41,6 +41,9 @@ function stageRows(key, s, fmt, addr) {
       rows.push(operandRow('valB', s.srcB, s.valB, s.fwdB, fmt));
       if (s.dstE !== 15) rows.push(<Row key="dstE" label="dstE" value={regLabel(s.dstE)} />);
       if (s.dstM !== 15) rows.push(<Row key="dstM" label="dstM" value={regLabel(s.dstM)} />);
+      if (control?.loadUse) {
+        rows.push(<Row key="stale" label="note" value="stalled" note="these operands are stale; Decode reads them again next cycle" tone="warn" />);
+      }
       return rows;
     }
     case 'execute': {
@@ -103,7 +106,7 @@ export default function StageCard({ stageKey, stage, control, numberFormat, high
             <code>{stage?.text ?? '—'}</code>
             {stage?.line ? <span className="muted">line {stage.line}</span> : null}
           </div>
-          <dl className="kv-list">{stage ? stageRows(stageKey, stage, fmt, addr) : null}</dl>
+          <dl className="kv-list">{stage ? stageRows(stageKey, stage, fmt, addr, control) : null}</dl>
         </>
       )}
     </article>
