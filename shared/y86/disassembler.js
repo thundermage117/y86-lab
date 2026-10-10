@@ -17,8 +17,9 @@ function reg(id) {
 }
 
 function formatValue(v) {
+  // Small values (including small negatives like -1 or -8) read best in decimal.
   const s = toS64(v);
-  return s < 0n || s > 9n ? `0x${BigInt.asUintN(64, v).toString(16)}` : s.toString();
+  return s >= -4096n && s <= 9n ? s.toString() : `0x${BigInt.asUintN(64, v).toString(16)}`;
 }
 
 /**

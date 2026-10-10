@@ -98,6 +98,6 @@ test('disassembler round-trips assembler output', () => {
   const src = ['irmovq $-1, %rdx', 'rmmovq %rsi, 16(%rsp)', 'cmovne %rax, %rbx', 'call 0x30', 'popq %rax', 'halt'];
   const out = assemble(src.join('\n'));
   const dis = disassemble(out.memory, 0, out.size).map((i) => i.text);
-  assert.deepEqual(dis, ['irmovq $0xffffffffffffffff, %rdx', 'rmmovq %rsi, 0x10(%rsp)', 'cmovne %rax, %rbx', 'call 0x30', 'popq %rax', 'halt']);
+  assert.deepEqual(dis, ['irmovq $-1, %rdx', 'rmmovq %rsi, 0x10(%rsp)', 'cmovne %rax, %rbx', 'call 0x30', 'popq %rax', 'halt']);
   assert.equal(decodeInstruction(Uint8Array.of(0xf0), 0).valid, false);
 });
