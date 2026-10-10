@@ -92,17 +92,6 @@
   padding: var(--space-lg) var(--space-xl) var(--space-2xl);
 }
 
-.app-footer {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: space-between;
-  gap: var(--space-sm);
-  padding: var(--space-md) var(--space-xl);
-  font-size: var(--text-sm);
-  color: var(--muted);
-  border-top: 1px solid var(--border);
-}
-
 /* ---------- View layouts */
 .program-layout {
   --editor-h: min(66vh, 640px);
@@ -146,6 +135,12 @@
   align-items: start;
 }
 
+.learn-side {
+  display: grid;
+  gap: var(--gap);
+}
+
+.instr-stages,
 .glossary {
   grid-column: 1 / -1;
 }

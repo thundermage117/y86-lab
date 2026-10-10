@@ -556,14 +556,6 @@ label.chip:has(input:not(:checked)) {
   height: 100%;
 }
 
-.example-select {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-sm);
-  font-size: var(--text-md);
-  color: var(--muted);
-}
-
 .diagnostics {
   margin: var(--space-md) 0 0;
   padding: var(--space-md) var(--space-md);
@@ -1278,12 +1270,13 @@ label.chip:has(input:not(:checked)) {
   font-size: var(--text-md);
 }
 
-.shortcuts {
-  margin-top: var(--space-sm);
-}
-
 .shortcuts th {
   width: 40%;
+}
+
+.about {
+  font-size: var(--text-md);
+  color: var(--muted);
 }
 
 .glossary dl {

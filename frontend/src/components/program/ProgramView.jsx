@@ -17,7 +17,7 @@ export default function ProgramView({ sim, onRun, onOpenPipeline }) {
         className="editor-panel"
       >
         <div className="program-toolbar">
-          <label className="example-select">
+          <label>
             <span className="sr-only">Load example program</span>
             <select
               value={exampleId ?? ''}

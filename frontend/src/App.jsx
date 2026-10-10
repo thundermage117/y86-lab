@@ -138,11 +138,6 @@ export default function App() {
           {hasData && tab === 'performance' && <PerformanceView result={result} />}
         </TabPanel>
       </main>
-
-      <footer className="app-footer">
-        <span>Y86-64 from <em>Computer Systems: A Programmer&apos;s Perspective</em> (Bryant &amp; O&apos;Hallaron).</span>
-        <span>Simulated with Icarus Verilog · keyboard shortcuts are listed on the Learn tab</span>
-      </footer>
     </div>
   );
 }
