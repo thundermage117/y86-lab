@@ -140,8 +140,7 @@
   gap: var(--gap);
 }
 
-.perf-compare,
-.timing-panel {
+.perf-compare {
   grid-column: 1 / -1;
 }
 
@@ -192,7 +191,8 @@
   }
   .program-layout,
   .learn-layout,
-  .performance-layout {
+  .performance-layout,
+  .perf-compare-body {
     grid-template-columns: minmax(0, 1fr);
   }
 }
