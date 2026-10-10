@@ -1,0 +1,113 @@
+/* Design tokens. Every color in the app comes from here; the light theme
+   only redefines tokens, never selectors. */
+
+:root {
+  --sans: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --mono: "IBM Plex Mono", "SFMono-Regular", Menlo, Consolas, monospace;
+  --radius: 12px;
+  --radius-sm: 8px;
+  --gap: 16px;
+
+  /* Surfaces */
+  --bg: #08111a;
+  --bg-glow-a: rgba(39, 177, 255, 0.14);
+  --bg-glow-b: rgba(245, 166, 35, 0.08);
+  --surface: #0f1d2b;
+  --surface-strong: #13263a;
+  --surface-sunken: #0b1622;
+  --surface-hover: rgba(136, 173, 211, 0.08);
+  --border: rgba(136, 173, 211, 0.16);
+  --border-strong: rgba(136, 173, 211, 0.34);
+  --selection: rgba(39, 177, 255, 0.28);
+  --shadow: 0 18px 50px rgba(0, 0, 0, 0.35);
+
+  /* Text */
+  --text: #e8f1fb;
+  --muted: #95aac0;
+  --faint: #5f7489;
+
+  /* Accent and status */
+  --accent: #3bb8ff;
+  --accent-ink: #04121e;
+  --ok: #3ccf8e;
+  --warn: #f5b041;
+  --danger: #ff6b6b;
+  --busy: #3bb8ff;
+
+  /* Pipeline stages */
+  --stage-fetch: #3bb8ff;
+  --stage-decode: #4fd1c5;
+  --stage-execute: #f5b041;
+  --stage-memory: #b794f4;
+  --stage-writeback: #68d391;
+  --stage-pc: #95aac0;
+  --stage-tint: 16%;
+
+  /* Event tones */
+  --tone-stall: #f5b041;
+  --tone-bubble: #f687b3;
+  --tone-forward: #4fd1c5;
+  --tone-error: #ff6b6b;
+  --tone-info: #8fb3d9;
+
+  /* Code */
+  --code-keyword: #7cc7ff;
+  --code-register: #f6c177;
+  --code-number: #9ce5c0;
+  --code-label: #e0a3ff;
+  --code-directive: #ff9e7a;
+  --code-comment: #6c8399;
+
+  /* Bars */
+  --bar: #3bb8ff;
+  --bar-track: rgba(136, 173, 211, 0.12);
+}
+
+:root[data-theme="light"] {
+  --bg: #e9eff5;
+  --bg-glow-a: rgba(21, 117, 214, 0.10);
+  --bg-glow-b: rgba(215, 139, 20, 0.07);
+  --surface: #ffffff;
+  --surface-strong: #f3f7fb;
+  --surface-sunken: #eef3f8;
+  --surface-hover: rgba(15, 23, 42, 0.05);
+  --border: rgba(15, 23, 42, 0.12);
+  --border-strong: rgba(15, 23, 42, 0.24);
+  --selection: rgba(21, 117, 214, 0.2);
+  --shadow: 0 12px 34px rgba(15, 23, 42, 0.10);
+
+  --text: #102236;
+  --muted: #4f6378;
+  --faint: #8597a9;
+
+  --accent: #1269c4;
+  --accent-ink: #ffffff;
+  --ok: #138a58;
+  --warn: #a8640a;
+  --danger: #c93636;
+  --busy: #1269c4;
+
+  --stage-fetch: #1269c4;
+  --stage-decode: #0f8a80;
+  --stage-execute: #b06a00;
+  --stage-memory: #7b4fc9;
+  --stage-writeback: #238a46;
+  --stage-pc: #4f6378;
+  --stage-tint: 11%;
+
+  --tone-stall: #a8640a;
+  --tone-bubble: #c2386f;
+  --tone-forward: #0f8a80;
+  --tone-error: #c93636;
+  --tone-info: #3e6a99;
+
+  --code-keyword: #0b5fb0;
+  --code-register: #9a5b00;
+  --code-number: #13804f;
+  --code-label: #8a3fbf;
+  --code-directive: #c2410c;
+  --code-comment: #7b8da0;
+
+  --bar: #1269c4;
+  --bar-track: rgba(15, 23, 42, 0.07);
+}

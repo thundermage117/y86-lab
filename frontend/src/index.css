@@ -1,3 +1,0 @@
-/* Minimal base — App.css handles all styling */
-*, *::before, *::after { box-sizing: border-box; }
-body { margin: 0; min-width: 320px; -webkit-font-smoothing: antialiased; }
