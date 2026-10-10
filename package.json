@@ -5,10 +5,12 @@
   "scripts": {
     "postinstall": "npm install --prefix backend && npm install --prefix frontend",
     "dev": "concurrently -n api,web -c blue,magenta \"npm run dev --prefix backend\" \"npm run dev --prefix frontend\"",
-    "test": "make -C hardware test && npm test --prefix backend && npm test --prefix frontend",
-    "lint": "npm run lint --prefix frontend"
+    "test": "make -C hardware test && node --test shared/test tests && npm test --prefix backend && npm test --prefix frontend",
+    "lint": "npm run lint --prefix frontend",
+    "test:hw": "make -C hardware test && node --test tests"
   },
   "devDependencies": {
     "concurrently": "^9.1.2"
-  }
+  },
+  "type": "module"
 }
