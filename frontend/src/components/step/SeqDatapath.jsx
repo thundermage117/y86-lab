@@ -32,7 +32,7 @@ export default function SeqDatapath({ c, numberFormat }) {
   ];
 
   return (
-    <Panel title="SEQ datapath" subtitle={`PC ${addr(c.pc)}: all six steps happen within this one clock cycle.`} className="seq-datapath">
+    <Panel id="seq-datapath" collapsible title="SEQ datapath" subtitle={`PC ${addr(c.pc)}: all six steps happen within this one clock cycle.`} className="seq-datapath">
       <div className="stage-instr"><code>{c.text}</code>{c.line ? <span className="muted">line {c.line}</span> : null}</div>
       <ol className="seq-steps">
         {rows.map(([key, label, text]) => (

@@ -375,7 +375,13 @@ label.chip:has(input:not(:checked)) {
   align-items: flex-start;
   justify-content: space-between;
   gap: var(--space-md);
+  min-height: var(--control-h-sm);
   margin-bottom: var(--space-md);
+}
+
+.panel-header.is-title-hidden .panel-actions {
+  flex: 1;
+  justify-content: space-between;
 }
 
 .panel-title {
@@ -383,10 +389,18 @@ label.chip:has(input:not(:checked)) {
   font-weight: 600;
 }
 
-.panel-subtitle {
-  margin-top: var(--space-2xs);
+.panel-subtitle,
+.panel-note {
   font-size: var(--text-sm);
   color: var(--muted);
+}
+
+.panel-subtitle {
+  margin-top: var(--space-2xs);
+}
+
+.panel-note {
+  margin-bottom: var(--space-sm);
 }
 
 .panel-header > div:first-child {
@@ -674,8 +688,11 @@ label.chip:has(input:not(:checked)) {
 }
 
 .stage-instr {
-  display: grid;
-  gap: var(--space-2xs);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0 var(--space-sm);
 }
 
 .stage-instr code {
@@ -686,6 +703,7 @@ label.chip:has(input:not(:checked)) {
 
 .stage-instr .muted {
   font-size: var(--text-xs);
+  white-space: nowrap;
 }
 
 .stage-instr-bubble code {
@@ -741,8 +759,12 @@ label.chip:has(input:not(:checked)) {
 }
 
 .reg {
-  display: grid;
-  padding: var(--space-sm) var(--space-sm);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0 var(--space-sm);
+  padding: var(--space-xs) var(--space-sm);
   border-radius: var(--radius-sm);
   border: 1px solid var(--border);
   background: var(--surface-sunken);
@@ -756,7 +778,9 @@ label.chip:has(input:not(:checked)) {
 }
 
 .reg-value {
+  min-width: 0;
   font-weight: 600;
+  text-align: right;
   overflow-wrap: anywhere;
 }
 
@@ -776,8 +800,10 @@ label.chip:has(input:not(:checked)) {
 }
 
 .reg-pending {
+  flex-basis: 100%;
   color: var(--stage-writeback);
   font-size: var(--text-xs);
+  text-align: right;
 }
 
 .cc-row {
@@ -801,17 +827,18 @@ label.chip:has(input:not(:checked)) {
 
 /* ---------- Run summary */
 .run-summary {
+  --summary: var(--ok);
   display: grid;
   gap: var(--space-sm);
-  padding: var(--space-md) var(--space-lg);
-  border-radius: var(--radius);
-  border: 1px solid var(--ok);
-  background: color-mix(in srgb, var(--ok) 9%, var(--surface));
+  margin-bottom: var(--space-md);
+  padding: var(--space-sm) var(--space-md);
+  border-radius: var(--radius-sm);
+  border-left: 3px solid var(--summary);
+  background: color-mix(in srgb, var(--summary) 9%, transparent);
 }
 
 .run-summary:not(.stat-HLT) {
-  border-color: var(--warn);
-  background: color-mix(in srgb, var(--warn) 9%, var(--surface));
+  --summary: var(--warn);
 }
 
 .run-summary-head {
@@ -958,18 +985,28 @@ label.chip:has(input:not(:checked)) {
   border-radius: var(--radius-xs);
 }
 
-.tl-glyph {
-  display: inline-block;
-  margin-left: 1px;
-  color: var(--tone-stall);
-  font-weight: 600;
+/* Event mark under a cycle number: the same color code as the slider ticks */
+.tl-mark,
+.tl-mark-sample {
+  height: 3px;
+  border-radius: var(--radius-2xs);
+  background: var(--tone-color);
 }
 
-.tl-cycle .tl-glyph {
+.tl-mark {
   position: absolute;
-  top: -2px;
-  right: 1px;
-  font-size: var(--text-2xs);
+  left: var(--space-xs);
+  right: var(--space-xs);
+  bottom: 1px;
+}
+
+.tl-cycle.is-current .tl-mark {
+  background: var(--accent-ink);
+}
+
+.tl-mark-sample {
+  --tone-color: var(--tone-stall);
+  width: 14px;
 }
 
 .tl-cell,
@@ -1282,13 +1319,17 @@ label.chip:has(input:not(:checked)) {
   padding-bottom: var(--space-md);
 }
 
+/* --tl-label and --tl-cell mirror MINI_LABEL / MINI_CELL in StepView.jsx */
 .tl-scroller.is-compact {
   --tl-cell: 28px;
-  --tl-label: 200px;
+  --tl-label: 140px;
   max-height: 210px;
 }
 
 @media (max-width: 760px) {
+  .tab {
+    padding: var(--space-sm);
+  }
   .cycle-scrub {
     order: 1;
     flex-basis: 100%;

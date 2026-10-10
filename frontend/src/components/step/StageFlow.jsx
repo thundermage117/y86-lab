@@ -1,11 +1,14 @@
-import { Fragment, useLayoutEffect, useRef, useState } from 'react';
+import { Fragment, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { RNONE } from '@y86/isa.js';
 import StageCard from '../pipeline/StageCard.jsx';
 import { STAGE_KEYS, regLabel } from '../../utils/format.js';
 import { FORWARD_ORIGIN } from '../../utils/hazards.js';
 import { connectorState } from './stepModel.js';
 
-const ARC_BAND = 46;
+const ARC_ROW = 12;
+
+/** Band height for `n` stacked arcs (0 when the run never forwards or stalls on a load). */
+const bandHeight = (n) => (n ? 26 + (n - 1) * ARC_ROW : 0);
 
 /** Forwarding arcs for this cycle: producer stage -> Decode, grouped by source. */
 function forwardArcs(cycle) {
@@ -47,49 +50,53 @@ function useCardCenters(container, deps) {
   return centers;
 }
 
-export default function StageFlow({ cycle, numberFormat, highlighted, focusUid, onFocusUid }) {
+export default function StageFlow({ cycles, cycle, numberFormat, highlighted, focusUid, onFocusUid }) {
   const container = useRef(null);
   const centers = useCardCenters(container, []);
   const arcs = forwardArcs(cycle);
+  // Sized for the whole run so the cards don't jump between cycles.
+  const band = useMemo(() => bandHeight(Math.max(0, ...cycles.map((c) => forwardArcs(c).length))), [cycles]);
 
   return (
     <div className="stage-flow" ref={container}>
-      <div className="arc-band" style={{ height: ARC_BAND }} aria-hidden={arcs.length === 0}>
-        {centers?.width > 0 && (
-          <svg width={centers.width} height={ARC_BAND} className="arc-svg" aria-hidden="true">
-            <defs>
-              <marker id="arc-head" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto">
-                <path d="M0,0 L8,4 L0,8 z" fill="var(--tone-forward)" />
-              </marker>
-              <marker id="arc-head-blocked" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto">
-                <path d="M0,0 L8,4 L0,8 z" fill="var(--tone-stall)" />
-              </marker>
-            </defs>
-            {arcs.map((arc, i) => {
-              const x1 = centers[arc.from];
-              const x2 = centers.decode + (i - (arcs.length - 1) / 2) * 14;
-              const top = 6 + i * 12;
-              return (
-                <path
-                  key={arc.label}
-                  className={`arc${arc.blocked ? ' is-blocked' : ''}`}
-                  d={`M ${x1} ${ARC_BAND} C ${x1} ${top}, ${x2} ${top}, ${x2} ${ARC_BAND - 2}`}
-                  markerEnd={`url(#${arc.blocked ? 'arc-head-blocked' : 'arc-head'})`}
-                />
-              );
-            })}
-          </svg>
-        )}
-        {centers?.width > 0 && arcs.map((arc, i) => (
-          <span
-            key={arc.label}
-            className={`chip chip-outline arc-label ${arc.blocked ? 'tone-stall' : 'tone-forward'}`}
-            style={{ left: (centers[arc.from] + centers.decode) / 2, top: i * 12 }}
-          >
-            {arc.label}
-          </span>
-        ))}
-      </div>
+      {band > 0 && (
+        <div className="arc-band" style={{ height: band }} aria-hidden={arcs.length === 0}>
+          {centers?.width > 0 && (
+            <svg width={centers.width} height={band} className="arc-svg" aria-hidden="true">
+              <defs>
+                <marker id="arc-head" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto">
+                  <path d="M0,0 L8,4 L0,8 z" fill="var(--tone-forward)" />
+                </marker>
+                <marker id="arc-head-blocked" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto">
+                  <path d="M0,0 L8,4 L0,8 z" fill="var(--tone-stall)" />
+                </marker>
+              </defs>
+              {arcs.map((arc, i) => {
+                const x1 = centers[arc.from];
+                const x2 = centers.decode + (i - (arcs.length - 1) / 2) * 14;
+                const top = 4 + i * ARC_ROW;
+                return (
+                  <path
+                    key={arc.label}
+                    className={`arc${arc.blocked ? ' is-blocked' : ''}`}
+                    d={`M ${x1} ${band} C ${x1} ${top}, ${x2} ${top}, ${x2} ${band - 2}`}
+                    markerEnd={`url(#${arc.blocked ? 'arc-head-blocked' : 'arc-head'})`}
+                  />
+                );
+              })}
+            </svg>
+          )}
+          {centers?.width > 0 && arcs.map((arc, i) => (
+            <span
+              key={arc.label}
+              className={`chip chip-outline arc-label ${arc.blocked ? 'tone-stall' : 'tone-forward'}`}
+              style={{ left: (centers[arc.from] + centers.decode) / 2, top: i * ARC_ROW }}
+            >
+              {arc.label}
+            </span>
+          ))}
+        </div>
+      )}
 
       <div className="stage-strip" aria-label="Pipeline stages">
         {STAGE_KEYS.map((key, i) => {
@@ -108,6 +115,7 @@ export default function StageFlow({ cycle, numberFormat, highlighted, focusUid, 
                   stageKey={key}
                   stage={stage}
                   control={cycle.control}
+                  staleReg={key === 'decode' && cycle.control.loadUse ? cycle.stages.execute.dstM : null}
                   numberFormat={numberFormat}
                   highlight={highlighted.includes(key)}
                   focused={!stage.bubble && stage.uid !== null && stage.uid === focusUid}

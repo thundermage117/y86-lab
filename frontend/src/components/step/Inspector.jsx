@@ -21,9 +21,9 @@ export default function Inspector({ result, mode, cycleIndex, numberFormat, prev
     writeStored(KEY, v);
   };
 
-  let subtitle = 'Values during this cycle; ← marks a write at the next clock edge.';
+  let note = '← marks a value written at the next clock edge.';
   if (view === 'memory') {
-    subtitle = access?.write
+    note = access?.write
       ? `This cycle writes ${formatWord(access.data, numberFormat)} to ${padAddr(BigInt(access.addr))}.`
       : access?.read
         ? `This cycle reads ${padAddr(BigInt(access.addr))}.`
@@ -35,7 +35,7 @@ export default function Inspector({ result, mode, cycleIndex, numberFormat, prev
       id="inspector"
       collapsible
       title={view === 'registers' ? 'Registers' : 'Data memory'}
-      subtitle={subtitle}
+      hideTitle
       className="inspector-panel"
       actions={(
         <Segmented
@@ -50,6 +50,7 @@ export default function Inspector({ result, mode, cycleIndex, numberFormat, prev
         />
       )}
     >
+      <p className="panel-note">{note}</p>
       {view === 'registers' ? (
         <RegisterGrid
           registers={cycle.registers}

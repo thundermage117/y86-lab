@@ -19,9 +19,11 @@ export function RichText({ text }) {
   });
 }
 
-export default function HazardPanel({ events, onHover, title = 'What is happening this cycle' }) {
+/** Plain-language account of the current cycle; `children` (the run summary) goes first. */
+export default function HazardPanel({ events, onHover, children }) {
   return (
-    <Panel title={title} className="hazard-panel">
+    <Panel id="explanation" collapsible title="This cycle" className="hazard-panel">
+      {children}
       {events.length === 0 ? (
         <p className="calm">
           Smooth sailing: every stage passes its instruction on to the next one. No stalls, bubbles or forwarding this cycle.

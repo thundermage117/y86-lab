@@ -41,7 +41,6 @@ export default function TimelineView({ result, cycleIndex, onSeek, mode }) {
         end={end}
         cycleIndex={cycleIndex}
         onSeek={onSeek}
-        autoScroll={width === 0}
       />
       <TimelineLegend />
     </Panel>

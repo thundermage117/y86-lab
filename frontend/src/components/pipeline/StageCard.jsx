@@ -14,20 +14,26 @@ function Row({ label, value, note, tone }) {
   );
 }
 
-function operandRow(name, src, val, fwd, numberFormat) {
-  if (src === 15 || src === null) return null;
+function operandNote(fwd, stale) {
   const stage = FWD_STAGE[fwd];
+  if (stage) return <Chip stage={stage}>← {fwd}</Chip>;
+  if (stale) return <Chip tone="stall" title="Read too early: Decode re-reads it next cycle">stale</Chip>;
+  return <Chip variant="quiet">regfile</Chip>;
+}
+
+function operandRow(name, src, val, fwd, numberFormat, stale) {
+  if (src === 15 || src === null) return null;
   return (
     <Row
       key={name}
       label={`${name} ${regLabel(src)}`}
       value={<Value hex={val} numberFormat={numberFormat} />}
-      note={stage ? <Chip stage={stage}>← {fwd}</Chip> : <Chip variant="quiet">regfile</Chip>}
+      note={operandNote(fwd, stale)}
     />
   );
 }
 
-function stageRows(key, s, fmt, addr, control, numberFormat) {
+function stageRows(key, s, fmt, addr, staleReg, numberFormat) {
   switch (key) {
     case 'fetch':
       return [
@@ -39,13 +45,10 @@ function stageRows(key, s, fmt, addr, control, numberFormat) {
     case 'decode': {
       const rows = [];
       if (s.icode === ICODE.CALL || s.icode === ICODE.JXX) rows.push(<Row key="valA" label="valA" value={addr(s.valP)} note={<Chip variant="quiet">valP</Chip>} />);
-      else rows.push(operandRow('valA', s.srcA, s.valA, s.fwdA, numberFormat));
-      rows.push(operandRow('valB', s.srcB, s.valB, s.fwdB, numberFormat));
+      else rows.push(operandRow('valA', s.srcA, s.valA, s.fwdA, numberFormat, s.srcA === staleReg));
+      rows.push(operandRow('valB', s.srcB, s.valB, s.fwdB, numberFormat, s.srcB === staleReg));
       if (s.dstE !== 15) rows.push(<Row key="dstE" label="dstE" value={regLabel(s.dstE)} />);
       if (s.dstM !== 15) rows.push(<Row key="dstM" label="dstM" value={regLabel(s.dstM)} />);
-      if (control?.loadUse) {
-        rows.push(<Row key="stale" label="note" value="stale" note="re-read next cycle" tone="warn" />);
-      }
       return rows;
     }
     case 'execute': {
@@ -75,7 +78,8 @@ function stageRows(key, s, fmt, addr, control, numberFormat) {
   }
 }
 
-export default function StageCard({ stageKey, stage, control, numberFormat, highlight, focused }) {
+/** `staleReg`: register Decode read too early because a load is still in Execute (load/use). */
+export default function StageCard({ stageKey, stage, control, staleReg = null, numberFormat, highlight, focused }) {
   const letter = STAGE_LETTERS[stageKey];
   const stalled = control?.[`${letter}_stall`];
   const bubbleNext = control?.[`${letter}_bubble`];
@@ -100,7 +104,7 @@ export default function StageCard({ stageKey, stage, control, numberFormat, high
       {stage?.bubble ? (
         <div className="stage-instr stage-instr-bubble">
           <code>bubble</code>
-          <span className="muted">no instruction (nop inserted by control logic)</span>
+          <span className="muted">nop from control logic</span>
         </div>
       ) : (
         <>
@@ -108,7 +112,7 @@ export default function StageCard({ stageKey, stage, control, numberFormat, high
             <code>{stage?.text ?? '—'}</code>
             {stage?.line ? <span className="muted">line {stage.line}</span> : null}
           </div>
-          <dl className="kv-list">{stage ? stageRows(stageKey, stage, fmt, addr, control, numberFormat) : null}</dl>
+          <dl className="kv-list">{stage ? stageRows(stageKey, stage, fmt, addr, staleReg, numberFormat) : null}</dl>
         </>
       )}
     </article>

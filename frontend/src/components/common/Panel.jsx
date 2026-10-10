@@ -4,9 +4,10 @@ import { IconButton } from './Icon.jsx';
 
 /**
  * A titled card section. With `collapsible` (requires `id`) the body can be
- * hidden; the choice is remembered per panel.
+ * hidden; the choice is remembered per panel. `hideTitle` keeps the heading
+ * for assistive tech only, when the actions (e.g. a view switch) name the panel.
  */
-export default function Panel({ title, subtitle, actions, children, className = '', id, collapsible = false }) {
+export default function Panel({ title, subtitle, actions, children, className = '', id, collapsible = false, hideTitle = false }) {
   const headingId = id ? `${id}-title` : undefined;
   const bodyId = id ? `${id}-body` : undefined;
   const storageKey = `y86-panel-${id}`;
@@ -22,9 +23,9 @@ export default function Panel({ title, subtitle, actions, children, className = 
   return (
     <section className={`panel ${className}${collapsed ? ' is-collapsed' : ''}`} id={id} aria-labelledby={headingId}>
       {(title || actions) && (
-        <header className="panel-header">
+        <header className={`panel-header${hideTitle ? ' is-title-hidden' : ''}`}>
           <div>
-            {title && <h2 className="panel-title" id={headingId}>{title}</h2>}
+            {title && <h2 className={hideTitle ? 'sr-only' : 'panel-title'} id={headingId}>{title}</h2>}
             {subtitle && !collapsed && <p className="panel-subtitle">{subtitle}</p>}
           </div>
           <div className="panel-actions">

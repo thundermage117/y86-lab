@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { STAT } from '@y86/isa.js';
 import StageFlow from './StageFlow.jsx';
 import SeqDatapath from './SeqDatapath.jsx';
@@ -10,9 +10,19 @@ import RunSummary from '../pipeline/RunSummary.jsx';
 import Listing from '../program/Listing.jsx';
 import TimelineGrid from '../timeline/TimelineGrid.jsx';
 import { buildTimeline } from '../../utils/timeline.js';
+import { useElementWidth } from '../../hooks/useElementWidth.js';
 import { explainPipelineCycle, explainSequentialCycle } from '../../utils/hazards.js';
 
-const MINI_RADIUS = 8;
+// Mini-timeline geometry; keep in step with .tl-scroller.is-compact in components.css.
+const MINI_LABEL = 140;
+const MINI_CELL = 28;
+
+/** Cycles shown either side of the current one: as many as fit the panel. */
+function miniRadius(width) {
+  if (!width) return 8;
+  const columns = Math.floor((width - MINI_LABEL) / MINI_CELL) - 1;
+  return Math.max(4, Math.floor((columns - 1) / 2));
+}
 
 /**
  * The single "Step" workspace: everything about one cycle on one screen,
@@ -35,11 +45,13 @@ export default function StepView({ result, mode, cycleIndex, numberFormat, onSee
     [cycle, numberFormat, pipelined],
   );
   const markers = useMemo(() => stageMarkers(cycle, mode), [cycle, mode]);
+  const miniBox = useRef(null);
+  const radius = miniRadius(useElementWidth(miniBox));
   const focusLine = lineForUid(cycle, mode, focusUid);
 
   const total = modeData.cycles.length;
-  const miniStart = Math.max(0, Math.min(cycleIndex - MINI_RADIUS, total - (2 * MINI_RADIUS + 1)));
-  const miniEnd = Math.min(total - 1, miniStart + 2 * MINI_RADIUS);
+  const miniStart = Math.max(0, Math.min(cycleIndex - radius, total - (2 * radius + 1)));
+  const miniEnd = Math.min(total - 1, miniStart + 2 * radius);
   const atEnd = cycleIndex === total - 1;
   const newCC = cycle.setCC && (pipelined || cycle.stat === STAT.AOK) ? cycle.newCC : null;
 
@@ -48,6 +60,7 @@ export default function StepView({ result, mode, cycleIndex, numberFormat, onSee
       {pipelined ? (
         <>
           <StageFlow
+            cycles={pipeCycles}
             cycle={cycle}
             numberFormat={numberFormat}
             highlighted={hoveredStages}
@@ -55,36 +68,33 @@ export default function StepView({ result, mode, cycleIndex, numberFormat, onSee
             onFocusUid={setFocusUid}
           />
           <Panel id="mini-timeline" collapsible title="Around this cycle" className="mini-timeline-panel">
-            <TimelineGrid
-              cycles={pipeCycles}
-              rows={rows}
-              start={miniStart}
-              end={miniEnd}
-              cycleIndex={cycleIndex}
-              onSeek={onSeek}
-              compact
-              focusUid={focusUid}
-              onFocusUid={setFocusUid}
-            />
+            <div ref={miniBox}>
+              <TimelineGrid
+                cycles={pipeCycles}
+                rows={rows}
+                start={miniStart}
+                end={miniEnd}
+                cycleIndex={cycleIndex}
+                onSeek={onSeek}
+                compact
+                focusUid={focusUid}
+                onFocusUid={setFocusUid}
+              />
+            </div>
           </Panel>
         </>
       ) : (
         <SeqDatapath c={cycle} numberFormat={numberFormat} />
       )}
 
-      {atEnd && <RunSummary mode={mode} modeData={modeData} numberFormat={numberFormat} />}
-
       <div className="step-detail">
-        <HazardPanel
-          events={events}
-          onHover={setHoveredStages}
-          title={pipelined ? 'What is happening this cycle' : 'This cycle'}
-        />
+        <HazardPanel events={events} onHover={setHoveredStages}>
+          {atEnd && <RunSummary mode={mode} modeData={modeData} numberFormat={numberFormat} />}
+        </HazardPanel>
         <Panel
           id="source"
           collapsible
           title="Source"
-          subtitle={pipelined ? 'Each instruction in flight is tagged with its stage.' : undefined}
           className="source-panel"
           actions={(
             <label className="check">
