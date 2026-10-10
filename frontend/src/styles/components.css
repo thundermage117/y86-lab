@@ -858,6 +858,7 @@ select {
 .tl-row {
   display: grid;
   grid-template-columns: var(--tl-label) repeat(var(--tl-cols), var(--tl-cell));
+  grid-auto-flow: dense;
   align-items: center;
   min-height: 26px;
 }

@@ -28,8 +28,16 @@ export default function TimelineView({ result, cycleIndex, onSeek, mode }) {
 
   useEffect(() => {
     if (width !== 0 || !scroller.current) return;
-    const cell = scroller.current.querySelector('.tl-head .is-current');
-    cell?.scrollIntoView({ block: 'nearest', inline: 'center', behavior: 'smooth' });
+    // Center the instructions in flight at the current cycle, both axes.
+    const box = scroller.current;
+    const cell = box.querySelector('.tl-cell.is-current') ?? box.querySelector('.tl-head .is-current');
+    if (!cell) return;
+    const b = box.getBoundingClientRect();
+    const r = cell.getBoundingClientRect();
+    const left = r.left - b.left - box.clientWidth / 2;
+    const top = r.top - b.top - box.clientHeight / 2;
+    const far = Math.abs(left) > box.clientWidth * 2 || Math.abs(top) > box.clientHeight * 2;
+    box.scrollBy({ left, top, behavior: far ? 'auto' : 'smooth' });
   }, [width, cycleIndex]);
 
   const columns = Array.from({ length: span }, (_, i) => start + i);
@@ -48,18 +56,19 @@ export default function TimelineView({ result, cycleIndex, onSeek, mode }) {
         </p>
       )}
       <div className="tl-scroller" ref={scroller} style={{ '--tl-cols': span }}>
-        <div className="tl-grid" role="table" aria-label={`Pipeline timeline, cycles ${start + 1} to ${end + 1}`}>
-          <div className="tl-row tl-head" role="row">
-            <span className="tl-label" role="columnheader">Instruction</span>
+        <div className="tl-grid" aria-label={`Pipeline timeline, cycles ${start + 1} to ${end + 1}`}>
+          <div className="tl-row tl-head">
+            <span className="tl-label">Instruction</span>
             {columns.map((c) => {
               const kinds = cycleKinds(cycles[c]);
               const glyph = [...kinds].map((k) => EVENT_GLYPH[k]).filter(Boolean).join('');
               return (
-                <span key={c} role="columnheader" className="tl-slot">
+                <span key={c} className="tl-slot">
                   <button
                     type="button"
                     className={`tl-cycle${c === cycleIndex ? ' is-current' : ''}`}
                     onClick={() => onSeek(c)}
+                    aria-label={`Cycle ${c + 1}`}
                     title={`Cycle ${c + 1}${kinds.size ? ': ' + [...kinds].map((k) => EVENT_KINDS[k].label).join(', ') : ''}`}
                   >
                     {c + 1}
@@ -70,24 +79,27 @@ export default function TimelineView({ result, cycleIndex, onSeek, mode }) {
             })}
           </div>
           {visible.map((row) => (
-            <div key={row.uid} className={`tl-row${row.squashed ? ' is-squashed' : ''}`} role="row">
-              <span className="tl-label" role="rowheader" title={row.squashed ? 'Squashed: never completed' : undefined}>
+            <div key={row.uid} className={`tl-row${row.squashed ? ' is-squashed' : ''}`}>
+              <span className="tl-label" title={row.squashed ? 'Squashed: never completed' : undefined}>
                 <code>{row.text}</code>
               </span>
-              {columns.map((c) => {
-                const cell = row.cells[c];
-                if (!cell) return <span key={c} className={`tl-empty${c === cycleIndex ? ' is-current' : ''}`} role="cell" />;
+              {cycleIndex >= start && cycleIndex <= end && !row.cells[cycleIndex] && (
+                <span className="tl-empty is-current" style={{ gridColumn: cycleIndex - start + 2 }} aria-hidden="true" />
+              )}
+              {Object.entries(row.cells).map(([key, cell]) => {
+                const c = Number(key);
+                if (c < start || c > end) return null;
                 return (
-                  <span key={c} role="cell" className="tl-slot">
-                    <button
-                      type="button"
-                      className={`tl-cell stage-${cell.stage}${cell.repeat ? ' is-repeat' : ''}${c === cycleIndex ? ' is-current' : ''}`}
-                      onClick={() => onSeek(c)}
-                      aria-label={`${row.text}: ${STAGE_LABELS[cell.stage]}${cell.repeat ? ' (stalled)' : ''} in cycle ${c + 1}`}
-                    >
-                      {cell.letter}
-                    </button>
-                  </span>
+                  <button
+                    key={c}
+                    type="button"
+                    style={{ gridColumn: c - start + 2 }}
+                    className={`tl-cell stage-${cell.stage}${cell.repeat ? ' is-repeat' : ''}${c === cycleIndex ? ' is-current' : ''}`}
+                    onClick={() => onSeek(c)}
+                    aria-label={`${row.text}: ${STAGE_LABELS[cell.stage]}${cell.repeat ? ' (stalled)' : ''} in cycle ${c + 1}`}
+                  >
+                    {cell.letter}
+                  </button>
                 );
               })}
             </div>
