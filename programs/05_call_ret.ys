@@ -1,0 +1,17 @@
+# @title Procedure call and return
+# @summary call pushes the return address and jumps; ret pops it. The pipeline can't predict where ret goes, so it stalls fetch until ret reaches Write-back: three bubbles per ret.
+# @concepts call/ret, stack, ret hazard, bubble
+    irmovq stack, %rsp
+    irmovq $7, %rdi
+    call triple            # %rax = 3 * %rdi
+    rrmovq %rax, %rbx      # use the result
+    halt
+
+triple:
+    rrmovq %rdi, %rax
+    addq %rdi, %rax
+    addq %rdi, %rax
+    ret
+
+    .pos 0x100
+stack:

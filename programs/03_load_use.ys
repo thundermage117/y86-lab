@@ -1,0 +1,15 @@
+# @title Load/use hazard
+# @summary An addq needs a value that mrmovq is still loading. Forwarding can't help (the data only exists after the Memory stage), so the pipeline stalls Decode for one cycle and injects a bubble into Execute.
+# @concepts load/use hazard, stall, bubble, forwarding
+    irmovq data, %rbx
+    mrmovq 0(%rbx), %rax   # load 21 into %rax
+    addq %rax, %rax        # uses %rax immediately -> 1-cycle load/use stall
+    mrmovq 8(%rbx), %rcx   # load 100 into %rcx
+    irmovq $1, %rdx        # one independent instruction in between...
+    addq %rcx, %rax        # ...so %rcx is forwarded from m_valM, no stall
+    halt
+
+    .align 8
+data:
+    .quad 21
+    .quad 100

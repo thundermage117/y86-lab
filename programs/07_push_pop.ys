@@ -1,0 +1,17 @@
+# @title Stack push and pop
+# @summary Pushes three values and pops them back in reverse order, swapping %rax and %rcx. Watch %rsp move by 8 bytes each time and the stack words change in data memory.
+# @concepts stack, memory, forwarding
+    irmovq stack, %rsp
+    irmovq $1, %rax
+    irmovq $2, %rbx
+    irmovq $3, %rcx
+    pushq %rax
+    pushq %rbx
+    pushq %rcx
+    popq %rax              # %rax = 3
+    popq %rbx              # %rbx = 2
+    popq %rcx              # %rcx = 1
+    halt
+
+    .pos 0x100
+stack:

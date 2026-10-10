@@ -1,0 +1,13 @@
+# @title Sum 1 to 100
+# @summary Adds the numbers 1..100 into %rax (expect 5050 = 0x13ba). The loop-closing jge is predicted taken, so only its final, not-taken execution is a misprediction.
+# @concepts forwarding, branch prediction, loop
+    irmovq $0, %rax        # sum = 0
+    irmovq $1, %rcx        # i = 1
+loop:
+    addq %rcx, %rax        # sum += i
+    irmovq $1, %rdx
+    addq %rdx, %rcx        # i++
+    irmovq $100, %rdx
+    subq %rcx, %rdx        # 100 - i
+    jge loop               # repeat while i <= 100
+    halt

@@ -1,0 +1,12 @@
+{
+  "name": "@y86/shared",
+  "private": true,
+  "type": "module",
+  "description": "Y86-64 ISA tables, assembler, disassembler and reference simulator",
+  "exports": {
+    ".": "./y86/index.js"
+  },
+  "scripts": {
+    "test": "node --test"
+  }
+}

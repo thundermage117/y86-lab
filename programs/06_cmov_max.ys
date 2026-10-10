@@ -1,0 +1,12 @@
+# @title Conditional move (max)
+# @summary Branch-free max using cmovl. A cmov whose condition is false is cancelled in Execute (its destination becomes RNONE), so no register is written.
+# @concepts conditional move, condition codes
+    irmovq $17, %rdi
+    irmovq $42, %rsi
+    rrmovq %rdi, %rax      # assume max = a
+    rrmovq %rdi, %rdx
+    subq %rsi, %rdx        # a - b
+    cmovl %rsi, %rax       # if a < b: max = b   (taken)
+    irmovq $-1, %rbx
+    cmovg %rsi, %rbx       # if a > b: %rbx = b  (not taken, %rbx stays -1)
+    halt

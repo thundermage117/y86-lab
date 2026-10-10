@@ -1,0 +1,11 @@
+# @title Data forwarding
+# @summary Back-to-back dependent instructions run without stalling because results are forwarded from Execute, Memory and Write-back straight into Decode.
+# @concepts forwarding, data hazard
+    irmovq $1, %rax
+    irmovq $2, %rbx
+    irmovq $3, %rcx
+    addq %rax, %rcx        # %rax from 3 back, %rcx from 1 back
+    addq %rbx, %rcx        # %rcx from the previous addq
+    addq %rcx, %rax
+    rrmovq %rax, %rdx
+    halt

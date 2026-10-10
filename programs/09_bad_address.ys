@@ -1,0 +1,8 @@
+# @title Exception: bad address
+# @summary mrmovq reads past the end of the 8 KB memory. The instruction gets status ADR, later instructions are cancelled, and the CPU stops when ADR reaches Write-back.
+# @concepts exceptions, status codes
+    irmovq $1, %rax
+    irmovq $0x2000, %rbx   # 8192: one past the last byte
+    mrmovq 0(%rbx), %rcx   # invalid address -> ADR
+    irmovq $99, %rax       # never commits
+    halt

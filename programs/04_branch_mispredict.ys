@@ -1,0 +1,14 @@
+# @title Branch misprediction
+# @summary The pipeline always predicts that jumps are taken. A jne that is NOT taken is discovered in Execute; the two wrongly fetched instructions are squashed with bubbles. A taken je costs nothing.
+# @concepts branch prediction, misprediction, bubble
+    irmovq $5, %rax
+    irmovq $5, %rbx
+    subq %rax, %rbx        # 5 - 5 = 0, sets ZF
+    jne wrong              # predicted taken, actually not taken -> 2 bubbles
+    irmovq $1, %rcx        # correct fall-through path
+    je done                # predicted taken, actually taken -> no penalty
+    irmovq $99, %rcx       # skipped
+wrong:
+    irmovq $-1, %rcx       # never executed
+done:
+    halt

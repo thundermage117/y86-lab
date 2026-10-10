@@ -1,0 +1,8 @@
+# @title Exception: invalid instruction
+# @summary The byte 0xf0 is not a Y86-64 instruction. Fetch marks it INS; earlier instructions still complete, then the CPU stops.
+# @concepts exceptions, status codes
+    irmovq $10, %rax
+    addq %rax, %rax
+    .byte 0xf0             # invalid opcode
+    irmovq $99, %rax       # never commits
+    halt
