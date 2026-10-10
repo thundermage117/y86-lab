@@ -9,7 +9,7 @@ const hexBytes = (bytes) => bytes.map((b) => b.toString(16).padStart(2, '0')).jo
  * to the pipeline stages currently holding that instruction.
  */
 export default function Listing({
-  listing, markers, showBytes = true, errorsByLine, follow = false, className = '', focusLine = null, onHoverLine,
+  listing, markers, showBytes = true, follow = false, focusLine = null, onHoverLine,
 }) {
   const container = useRef(null);
   const firstMarked = markers ? Math.min(...[...markers.keys()]) : null;
@@ -31,7 +31,7 @@ export default function Listing({
   while (end > 0 && listing[end - 1].kind === 'blank' && !listing[end - 1].text.trim()) end -= 1;
 
   return (
-    <div className={`listing ${className}`} ref={container}>
+    <div className="listing" ref={container}>
       <table>
         <thead className="sr-only">
           <tr>
@@ -44,7 +44,6 @@ export default function Listing({
         <tbody>
           {listing.slice(begin, end).map((item) => {
             const stages = markers?.get(item.line) ?? [];
-            const error = errorsByLine?.get(item.line);
             const isComment = /^\s*#/.test(item.text);
             return (
               <tr
@@ -52,11 +51,9 @@ export default function Listing({
                 data-line={item.line}
                 className={[
                   stages.length ? `is-marked stage-bg-${stages[0]}` : '',
-                  error ? 'has-error' : '',
                   isComment ? 'is-comment' : '',
                   focusLine === item.line ? 'is-focused' : '',
                 ].join(' ')}
-                title={error}
                 onMouseEnter={onHoverLine && stages.length ? () => onHoverLine(item.line) : undefined}
                 onMouseLeave={onHoverLine && stages.length ? () => onHoverLine(null) : undefined}
               >

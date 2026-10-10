@@ -119,12 +119,11 @@ export default function App() {
       {showTransport && <Transport playback={playback} ticks={ticks} nav={nav} />}
 
       <main id="main" className="app-main">
-        {sim.status === 'error' && sim.error && (
+        {/* Assembler errors are shown in the editor and on the Program tab badge instead. */}
+        {sim.status === 'error' && sim.error && sim.diagnostics.length === 0 && (
           <div className="banner banner-error" role="alert">
             <span>{sim.error}</span>
-            {sim.diagnostics.length === 0 && (
-              <button type="button" className="btn btn-sm" onClick={sim.retry}>Retry</button>
-            )}
+            <button type="button" className="btn btn-sm" onClick={sim.retry}>Retry</button>
           </div>
         )}
 

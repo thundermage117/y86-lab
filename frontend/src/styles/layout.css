@@ -105,14 +105,9 @@
 
 /* ---------- View layouts */
 .program-layout {
+  --editor-h: min(66vh, 640px);
   display: grid;
   grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
-  gap: var(--gap);
-  align-items: start;
-}
-
-.program-side {
-  display: grid;
   gap: var(--gap);
 }
 
