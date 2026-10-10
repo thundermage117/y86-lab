@@ -35,7 +35,7 @@ export default function ProgramView({ sim, onRun, onOpenPipeline }) {
         )}
       >
         <div className="editor-frame">
-          <Y86Editor value={source} onChange={setSource} errors={diagnostics} onRun={onRun} />
+          <Y86Editor value={source} onChange={setSource} errors={diagnostics} onRun={onRun} symbols={result?.program?.symbols} />
         </div>
         {diagnostics.length > 0 && (
           <ul className="diagnostics" aria-label="Assembler errors">
